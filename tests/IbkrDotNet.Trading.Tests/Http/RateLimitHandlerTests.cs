@@ -1,0 +1,135 @@
+using System.Net;
+using IbkrDotNet.Trading.Configuration;
+using IbkrDotNet.Trading.Http;
+using IbkrDotNet.Trading.Http.RateLimiting;
+using IbkrDotNet.Trading.Tests.TestSupport;
+using NodaTime;
+using Xunit;
+
+namespace IbkrDotNet.Trading.Tests.Http;
+
+public class RateLimitHandlerTests
+{
+    private static (HttpClient Client, FakeDelayScheduler Scheduler, StubHttpMessageHandler Stub) Build(
+        Action<IbkrTradingOptions>? configure = null)
+    {
+        var options = new IbkrTradingOptions();
+        configure?.Invoke(options);
+
+        var scheduler = new FakeDelayScheduler();
+        var stub = new StubHttpMessageHandler();
+        var handler = new IbkrRateLimitHandler(options, scheduler) { InnerHandler = stub };
+
+        return (new HttpClient(handler) { BaseAddress = new Uri("https://localhost:5000") }, scheduler, stub);
+    }
+
+    [Fact]
+    public async Task Lets_the_first_request_through_without_delay()
+    {
+        var (client, scheduler, _) = Build();
+
+        await client.GetAsync(new Uri("/v1/api/iserver/accounts", UriKind.Relative), TestContext.Current.CancellationToken);
+
+        Assert.Equal(Duration.Zero, scheduler.TotalDelay);
+    }
+
+    [Fact]
+    public async Task Paces_the_global_ten_per_second_limit()
+    {
+        var (client, scheduler, _) = Build();
+        var uri = new Uri("/v1/api/iserver/secdef/search", UriKind.Relative);
+
+        // Ten requests fit inside one second; the eleventh must wait for the window to roll.
+        for (var i = 0; i < 11; i++)
+        {
+            await client.GetAsync(uri, TestContext.Current.CancellationToken);
+        }
+
+        Assert.Single(scheduler.Delays);
+        Assert.Equal(Duration.FromSeconds(1), scheduler.Delays[0]);
+    }
+
+    [Fact]
+    public async Task Applies_the_documented_five_second_limit_on_trade_history()
+    {
+        var (client, scheduler, _) = Build();
+        var uri = new Uri("/v1/api/iserver/account/trades", UriKind.Relative);
+
+        await client.GetAsync(uri, TestContext.Current.CancellationToken);
+        await client.GetAsync(uri, TestContext.Current.CancellationToken);
+
+        Assert.Equal(Duration.FromSeconds(5), scheduler.TotalDelay);
+    }
+
+    [Fact]
+    public async Task Matches_a_templated_fyi_route()
+    {
+        var (client, scheduler, _) = Build();
+
+        await client.PutAsync(
+            new Uri("/v1/api/fyi/notifications/abc123", UriKind.Relative),
+            content: null,
+            TestContext.Current.CancellationToken);
+        await client.PutAsync(
+            new Uri("/v1/api/fyi/notifications/def456", UriKind.Relative),
+            content: null,
+            TestContext.Current.CancellationToken);
+
+        // Both requests hit the same per-endpoint bucket despite different identifiers.
+        Assert.Equal(Duration.FromSeconds(1), scheduler.Delays[0]);
+    }
+
+    [Fact]
+    public async Task Refuses_rather_than_blocking_for_a_fifteen_minute_limit()
+    {
+        var (client, _, _) = Build();
+        var uri = new Uri("/v1/api/iserver/scanner/params", UriKind.Relative);
+
+        await client.GetAsync(uri, TestContext.Current.CancellationToken);
+
+        var ex = await Assert.ThrowsAsync<IbkrRateLimitExceededException>(
+            () => client.GetAsync(uri, TestContext.Current.CancellationToken));
+
+        Assert.Equal(Duration.FromMinutes(15), ex.RetryAfter);
+        Assert.Contains("scanner/params", ex.Limit, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Honours_a_raised_maximum_wait()
+    {
+        var (client, scheduler, _) = Build(o => o.RateLimiting.MaxWait = Duration.FromMinutes(20));
+        var uri = new Uri("/v1/api/iserver/scanner/params", UriKind.Relative);
+
+        await client.GetAsync(uri, TestContext.Current.CancellationToken);
+        await client.GetAsync(uri, TestContext.Current.CancellationToken);
+
+        Assert.Equal(Duration.FromMinutes(15), scheduler.TotalDelay);
+    }
+
+    [Fact]
+    public async Task Sends_without_pacing_when_rate_limiting_is_disabled()
+    {
+        var (client, scheduler, stub) = Build(o => o.RateLimiting.Enabled = false);
+        var uri = new Uri("/v1/api/iserver/account/trades", UriKind.Relative);
+
+        await client.GetAsync(uri, TestContext.Current.CancellationToken);
+        await client.GetAsync(uri, TestContext.Current.CancellationToken);
+
+        Assert.Equal(Duration.Zero, scheduler.TotalDelay);
+        Assert.Equal(2, stub.Requests.Count);
+    }
+
+    [Fact]
+    public async Task Passes_the_response_through_untouched()
+    {
+        var (client, _, stub) = Build();
+        stub.RespondWith(HttpStatusCode.TooManyRequests, """{"error":"slow down"}""");
+
+        var response = await client.GetAsync(
+            new Uri("/v1/api/iserver/accounts", UriKind.Relative),
+            TestContext.Current.CancellationToken);
+
+        // Pacing is the handler's only job; interpreting a 429 belongs to IbkrApiClient.
+        Assert.Equal(HttpStatusCode.TooManyRequests, response.StatusCode);
+    }
+}
