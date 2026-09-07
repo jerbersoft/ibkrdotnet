@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Globalization;
 
 namespace IbkrDotNet.Trading.Http;
@@ -13,14 +12,14 @@ namespace IbkrDotNet.Trading.Http;
 /// </remarks>
 public sealed class IbkrRequest
 {
-    private readonly Dictionary<string, string> _query = [];
-    private readonly ReadOnlyDictionary<string, string> _queryView;
+    // Ordered so the rendered query string is deterministic. Dictionary happens to preserve
+    // insertion order today, but does not promise to, and tests and caches depend on the order.
+    private readonly OrderedDictionary<string, string> _query = [];
 
     private IbkrRequest(HttpMethod method, string path)
     {
         Method = method;
         Path = path;
-        _queryView = new ReadOnlyDictionary<string, string>(_query);
     }
 
     /// <summary>The HTTP method.</summary>
@@ -33,7 +32,8 @@ public sealed class IbkrRequest
     public string Path { get; }
 
     /// <summary>The query string parameters, in insertion order.</summary>
-    public IReadOnlyDictionary<string, string> Query => _queryView;
+    public IReadOnlyDictionary<string, string> Query =>
+        ((IDictionary<string, string>)_query).AsReadOnly();
 
     /// <summary>The object to serialize as a JSON request body, when there is one.</summary>
     public object? Body { get; private set; }
