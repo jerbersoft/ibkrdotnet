@@ -7,10 +7,10 @@ namespace IbkrDotNet.Trading.Serialization.Converters;
 /// <summary>
 /// Reads and writes a <see cref="HistoryPeriod"/> in its wire form, for example <c>1d</c>.
 /// </summary>
-public sealed class HistoryPeriodConverter : JsonConverter<HistoryPeriod>
+public sealed class HistoryPeriodConverter : IbkrStructConverterFactory<HistoryPeriod>
 {
     /// <inheritdoc />
-    public override HistoryPeriod Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    protected override HistoryPeriod ReadValue(ref Utf8JsonReader reader)
     {
         var text = JsonReaderNumerics.ReadRequiredString(
             ref reader,
@@ -26,9 +26,8 @@ public sealed class HistoryPeriodConverter : JsonConverter<HistoryPeriod>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, HistoryPeriod value, JsonSerializerOptions options)
+    protected override void WriteValue(Utf8JsonWriter writer, HistoryPeriod value)
     {
-        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStringValue(value.ToString());
     }
 }

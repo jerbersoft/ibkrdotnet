@@ -13,10 +13,10 @@ namespace IbkrDotNet.Trading.Serialization.Converters;
 /// in the response) and <c>chartPanStartTime</c>. IBKR documents these values as UTC, so they are
 /// read as UTC without applying any zone conversion.
 /// </remarks>
-public sealed class IbkrUtcDateTimeConverter : JsonConverter<Instant>
+public sealed class IbkrUtcDateTimeConverter : IbkrStructConverterFactory<Instant>
 {
     /// <inheritdoc />
-    public override Instant Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    protected override Instant ReadValue(ref Utf8JsonReader reader)
     {
         var text = JsonReaderNumerics.ReadRequiredString(ref reader, "YYYYMMDD-hh:mm:ss", typeof(Instant));
         var parsed = IbkrTimePatterns.UtcDateTime.Parse(text);
@@ -29,9 +29,8 @@ public sealed class IbkrUtcDateTimeConverter : JsonConverter<Instant>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, Instant value, JsonSerializerOptions options)
+    protected override void WriteValue(Utf8JsonWriter writer, Instant value)
     {
-        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStringValue(IbkrTimePatterns.UtcDateTime.Format(value.InUtc().LocalDateTime));
     }
 }

@@ -10,17 +10,16 @@ namespace IbkrDotNet.Trading.Serialization.Converters;
 /// <remarks>
 /// Used by <c>barLength</c> and <c>tradingDayDuration</c>.
 /// </remarks>
-public sealed class DurationSecondsConverter : JsonConverter<Duration>
+public sealed class DurationSecondsConverter : IbkrStructConverterFactory<Duration>
 {
     /// <inheritdoc />
-    public override Duration Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+    protected override Duration ReadValue(ref Utf8JsonReader reader) =>
         Duration.FromSeconds(
             JsonReaderNumerics.ReadInt64(ref reader, "a number of seconds", typeof(Duration)));
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, Duration value, JsonSerializerOptions options)
+    protected override void WriteValue(Utf8JsonWriter writer, Duration value)
     {
-        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteNumberValue((long)value.TotalSeconds);
     }
 }

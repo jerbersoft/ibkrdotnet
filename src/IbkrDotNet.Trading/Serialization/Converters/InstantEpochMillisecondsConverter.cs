@@ -12,17 +12,16 @@ namespace IbkrDotNet.Trading.Serialization.Converters;
 /// string containing a number), historical bar timestamps (<c>t</c>) and a watchlist's
 /// <c>modified</c>. Both encodings are accepted; values are always written as JSON numbers.
 /// </remarks>
-public sealed class InstantEpochMillisecondsConverter : JsonConverter<Instant>
+public sealed class InstantEpochMillisecondsConverter : IbkrStructConverterFactory<Instant>
 {
     /// <inheritdoc />
-    public override Instant Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+    protected override Instant ReadValue(ref Utf8JsonReader reader) =>
         Instant.FromUnixTimeMilliseconds(
             JsonReaderNumerics.ReadInt64(ref reader, "milliseconds since the Unix epoch", typeof(Instant)));
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, Instant value, JsonSerializerOptions options)
+    protected override void WriteValue(Utf8JsonWriter writer, Instant value)
     {
-        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteNumberValue(value.ToUnixTimeMilliseconds());
     }
 }

@@ -15,10 +15,10 @@ namespace IbkrDotNet.Trading.Serialization.Converters;
 /// <see cref="DateTimeZone.AtStartOfDay"/> or <c>LocalDate.At(time).InZoneLeniently(zone)</c> to get
 /// an absolute instant.
 /// </remarks>
-public sealed class IbkrLocalTimeConverter : JsonConverter<LocalTime>
+public sealed class IbkrLocalTimeConverter : IbkrStructConverterFactory<LocalTime>
 {
     /// <inheritdoc />
-    public override LocalTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    protected override LocalTime ReadValue(ref Utf8JsonReader reader)
     {
         var text = JsonReaderNumerics.ReadRequiredString(ref reader, "HHmm", typeof(LocalTime));
         var parsed = IbkrTimePatterns.HourMinute.Parse(text);
@@ -31,9 +31,8 @@ public sealed class IbkrLocalTimeConverter : JsonConverter<LocalTime>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, LocalTime value, JsonSerializerOptions options)
+    protected override void WriteValue(Utf8JsonWriter writer, LocalTime value)
     {
-        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStringValue(IbkrTimePatterns.HourMinute.Format(value));
     }
 }

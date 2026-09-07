@@ -11,17 +11,16 @@ namespace IbkrDotNet.Trading.Serialization.Converters;
 /// Used by <c>mktDataDelay</c>, <c>travelTime</c>, the tickle response's <c>ssoExpires</c> and the
 /// SSO validation response's <c>EXPIRES</c>.
 /// </remarks>
-public sealed class DurationMillisecondsConverter : JsonConverter<Duration>
+public sealed class DurationMillisecondsConverter : IbkrStructConverterFactory<Duration>
 {
     /// <inheritdoc />
-    public override Duration Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+    protected override Duration ReadValue(ref Utf8JsonReader reader) =>
         Duration.FromMilliseconds(
             JsonReaderNumerics.ReadInt64(ref reader, "a number of milliseconds", typeof(Duration)));
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, Duration value, JsonSerializerOptions options)
+    protected override void WriteValue(Utf8JsonWriter writer, Duration value)
     {
-        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteNumberValue((long)value.TotalMilliseconds);
     }
 }

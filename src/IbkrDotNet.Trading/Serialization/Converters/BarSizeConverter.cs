@@ -7,10 +7,10 @@ namespace IbkrDotNet.Trading.Serialization.Converters;
 /// <summary>
 /// Reads and writes a <see cref="BarSize"/> in its wire form, for example <c>5min</c>.
 /// </summary>
-public sealed class BarSizeConverter : JsonConverter<BarSize>
+public sealed class BarSizeConverter : IbkrStructConverterFactory<BarSize>
 {
     /// <inheritdoc />
-    public override BarSize Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    protected override BarSize ReadValue(ref Utf8JsonReader reader)
     {
         var text = JsonReaderNumerics.ReadRequiredString(
             ref reader,
@@ -26,9 +26,8 @@ public sealed class BarSizeConverter : JsonConverter<BarSize>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, BarSize value, JsonSerializerOptions options)
+    protected override void WriteValue(Utf8JsonWriter writer, BarSize value)
     {
-        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStringValue(value.ToString());
     }
 }

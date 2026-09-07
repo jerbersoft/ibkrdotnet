@@ -339,3 +339,87 @@ public class ConverterTests
         Assert.Equal(json, Write(result));
     }
 }
+
+public class LooseWireValueTests
+{
+    private static readonly JsonSerializerOptions Options = IbkrJson.Options;
+
+    private sealed record Instrument
+    {
+        [JsonPropertyName("expiry")]
+        [JsonConverter(typeof(IbkrLocalDateConverter))]
+        public LocalDate? Expiry { get; init; }
+
+        [JsonPropertyName("strike")]
+        public string? Strike { get; init; }
+
+        [JsonPropertyName("currency")]
+        public string? Currency { get; init; }
+    }
+
+    [Theory]
+    [InlineData("""{"expiry":null}""")]
+    [InlineData("""{"expiry":"None"}""")]
+    [InlineData("""{"expiry":""}""")]
+    [InlineData("""{"expiry":"N/A"}""")]
+    public void Treats_ibkrs_textual_stand_ins_for_absent_as_null(string json)
+    {
+        // A non-expiring instrument reports null on one endpoint and the literal "None" on another.
+        Assert.Null(JsonSerializer.Deserialize<Instrument>(json, Options)!.Expiry);
+    }
+
+    [Fact]
+    public void Still_reads_a_real_date_through_the_same_converter()
+    {
+        var result = JsonSerializer.Deserialize<Instrument>("""{"expiry":"20240315"}""", Options)!;
+
+        Assert.Equal(new LocalDate(2024, 3, 15), result.Expiry);
+    }
+
+    [Fact]
+    public void Reads_a_string_field_that_ibkr_sent_as_a_number()
+    {
+        // '/portfolio/{accountId}/summary' documents currency as a string and sends 1.1;
+        // 'strike' is documented as a string and arrives as 0.
+        var result = JsonSerializer.Deserialize<Instrument>("""{"strike":0,"currency":1.1}""", Options)!;
+
+        Assert.Equal("0", result.Strike);
+        Assert.Equal("1.1", result.Currency);
+    }
+
+    [Fact]
+    public void Reads_a_string_field_that_ibkr_sent_as_a_boolean()
+    {
+        var result = JsonSerializer.Deserialize<Instrument>("""{"currency":true}""", Options)!;
+
+        Assert.Equal("true", result.Currency);
+    }
+
+    private sealed record RequiredExpiry
+    {
+        [JsonPropertyName("expiry")]
+        [JsonConverter(typeof(IbkrLocalDateConverter))]
+        public LocalDate Expiry { get; init; }
+    }
+
+    [Fact]
+    public void Refuses_an_absent_value_where_the_property_cannot_represent_one()
+    {
+        // The same converter serves LocalDate and LocalDate?; only the nullable form can absorb an
+        // absent value, and the message says so rather than producing a default date.
+        var ex = Assert.Throws<IbkrSerializationException>(
+            () => JsonSerializer.Deserialize<RequiredExpiry>("""{"expiry":"None"}""", Options));
+
+        Assert.Contains("LocalDate?", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Keeps_dictionary_keys_working_with_the_global_string_converter()
+    {
+        // Registering a converter for string globally also intercepts dictionary keys.
+        var result = JsonSerializer.Deserialize<Dictionary<string, int>>("""{"AUD":1,"BASE":2}""", Options)!;
+
+        Assert.Equal(1, result["AUD"]);
+        Assert.Equal(2, result["BASE"]);
+    }
+}

@@ -14,10 +14,10 @@ namespace IbkrDotNet.Trading.Serialization.Converters;
 /// <see cref="LocalDate"/> models. Values that arrive as JSON numbers (IBKR does this for
 /// <c>expirationDate</c> and <c>ltd</c>) are accepted.
 /// </remarks>
-public sealed class IbkrLocalDateConverter : JsonConverter<LocalDate>
+public sealed class IbkrLocalDateConverter : IbkrStructConverterFactory<LocalDate>
 {
     /// <inheritdoc />
-    public override LocalDate Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    protected override LocalDate ReadValue(ref Utf8JsonReader reader)
     {
         var text = reader.TokenType == JsonTokenType.Number
             ? JsonReaderNumerics.ReadInt64(ref reader, "yyyyMMdd", typeof(LocalDate))
@@ -34,9 +34,8 @@ public sealed class IbkrLocalDateConverter : JsonConverter<LocalDate>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, LocalDate value, JsonSerializerOptions options)
+    protected override void WriteValue(Utf8JsonWriter writer, LocalDate value)
     {
-        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStringValue(IbkrTimePatterns.Date.Format(value));
     }
 }

@@ -13,10 +13,10 @@ namespace IbkrDotNet.Trading.Serialization.Converters;
 /// into the 2000s. Where an object also carries the <c>_r</c> epoch-millisecond variant of the same
 /// value, prefer that field: it is unambiguous and has no century assumption.
 /// </remarks>
-public sealed class IbkrCompactDateTimeConverter : JsonConverter<Instant>
+public sealed class IbkrCompactDateTimeConverter : IbkrStructConverterFactory<Instant>
 {
     /// <inheritdoc />
-    public override Instant Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    protected override Instant ReadValue(ref Utf8JsonReader reader)
     {
         var text = JsonReaderNumerics.ReadRequiredString(ref reader, "YYMMDDhhmmss", typeof(Instant));
         var parsed = IbkrTimePatterns.CompactDateTime.Parse(text);
@@ -29,9 +29,8 @@ public sealed class IbkrCompactDateTimeConverter : JsonConverter<Instant>
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, Instant value, JsonSerializerOptions options)
+    protected override void WriteValue(Utf8JsonWriter writer, Instant value)
     {
-        ArgumentNullException.ThrowIfNull(writer);
         writer.WriteStringValue(IbkrTimePatterns.CompactDateTime.Format(value.InUtc().LocalDateTime));
     }
 }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using IbkrDotNet.Trading.Serialization.Converters;
 
 namespace IbkrDotNet.Trading.Serialization;
 
@@ -17,7 +18,8 @@ namespace IbkrDotNet.Trading.Serialization;
 /// </para>
 /// <para>
 /// Unknown members are skipped rather than rejected: IBKR adds response fields without notice, and a
-/// new field should not break an existing caller.
+/// new field should not break an existing caller. For the same reason, string properties tolerate a
+/// numeric or boolean value on the wire, which IBKR sends for several documented-as-string fields.
 /// </para>
 /// </remarks>
 public static class IbkrJson
@@ -58,6 +60,11 @@ public static class IbkrJson
         };
 
         options.Converters.Add(new JsonStringEnumConverter());
+
+        // IBKR types string fields loosely: 'currency' and 'strike' are documented as strings but
+        // arrive as numbers on several endpoints. This is a property of the API, not of particular
+        // fields, so it is handled once here.
+        options.Converters.Add(new FlexibleStringConverter());
 
         // Populate the reflection-based type resolver and freeze, so the instance is safe to share
         // across threads and cannot be mutated by a caller.
