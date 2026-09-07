@@ -4,16 +4,118 @@ A .NET client for the [Interactive Brokers Web API](https://www.interactivebroke
 
 | Package | Description |
 | --- | --- |
-| `IbkrDotNet.Trading` | The client: endpoint groups, models, authentication and transport. |
-| `IbkrDotNet.Extensions.DependencyInjection` | `AddIbkrTrading(...)` registration for `Microsoft.Extensions.DependencyInjection`. |
+| `IbkrDotNet.Trading` | Endpoint clients, models, authentication and transport. |
+| `IbkrDotNet.Extensions.DependencyInjection` | `AddIbkrTrading(...)` for `Microsoft.Extensions.DependencyInjection`. |
 
 Targets `net10.0`. Every date and time value in the public API is a [NodaTime](https://nodatime.org) type — there is no `DateTime`, `DateTimeOffset` or `TimeSpan` anywhere in it.
 
-> Status: in development. See the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones) for what is implemented.
+> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data — 59 of IBKR's 108 Trading endpoints) is implemented. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
 
-## Documentation
+## Getting started
 
-Full usage documentation lands with issue [#14](https://github.com/jerbersoft/ibkrdotnet/issues/14).
+```csharp
+builder.Services
+    .AddIbkrTrading(options =>
+    {
+        options.Environment = IbkrEnvironment.ClientPortalGateway;
+        options.UserAgent   = "contoso-trader/1.0";
+    })
+    .UseClientPortalGateway()
+    .AddBrokerageSessionKeepAlive();
+```
+
+```csharp
+public sealed class Trader(IIbkrTradingClient ibkr)
+{
+    public async Task<OrderSubmissionResult> BuyAsync(AccountId account, ConId conId, CancellationToken ct)
+    {
+        await ibkr.Session.EnsureBrokerageSessionAsync(ct);
+
+        return await ibkr.Orders.SubmitAsync(account, [new OrderTicket
+        {
+            ConId        = conId.Value,
+            OrderType    = "LMT",
+            Side         = OrderSide.Buy,
+            TimeInForce  = TimeInForce.Day,
+            Quantity     = 100,
+            Price        = 165.00m,
+        }], cancellationToken: ct);
+    }
+}
+```
+
+Inject an individual client — `IOrdersClient`, `IPortfolioClient`, and so on — where a component only needs one.
+
+## Choosing an authentication mechanism
+
+IBKR offers three ways in. They differ only in how a request is credentialed; resource paths and payloads are identical, so switching is a configuration change.
+
+| Mechanism | For | Setup |
+| --- | --- | --- |
+| **Client Portal Gateway** | Retail and individual clients | `.UseClientPortalGateway()` — the default |
+| **OAuth 2.0** | Organizations, Financial Advisors, IBrokers | `.UseOAuth2(o => ...)` |
+| **OAuth 1.0a** | Financial Advisors, organizations, third-party vendors | `.UseOAuth1a(o => ...)` |
+
+### Client Portal Gateway
+
+Download and run IBKR's gateway, then log in at `https://localhost:5000`. The gateway holds the credentials and proxies authenticated requests, so nothing needs signing on this side. Its certificate is self-signed, so the first request fails on TLS until you trust it.
+
+### OAuth 2.0
+
+```csharp
+.UseOAuth2(o =>
+{
+    o.ClientId        = "...";     // issued at registration
+    o.ClientKeyId     = "...";     // identifies the registered public key
+    o.Credential      = "...";     // the IBKR username the session is for
+    o.ClientIpAddress = "...";     // IBKR validates this against the request's origin
+    o.UsePrivateKeyFile("/secrets/ibkr-oauth2.pem");
+})
+```
+
+`ClientIpAddress` has no default. IBKR validates the claim against the address the request actually arrives from, and its reference implementation discovers it by calling a third-party lookup service — not something this library will do on your behalf unasked. Set it, or supply `ClientIpAddressResolver`.
+
+### OAuth 1.0a
+
+```csharp
+.UseOAuth1a(o =>
+{
+    o.ConsumerKey        = "...";
+    o.Realm              = OAuth1aOptions.LimitedPoaRealm;  // TestRealm for TESTCONS
+    o.AccessToken        = "...";
+    o.AccessTokenSecret  = "...";   // base64, still encrypted
+    o.DiffieHellmanPrime = "...";   // issued with the consumer key
+    o.UseEncryptionKeyFile("/secrets/ibkr-encryption.pem"); // decrypts the token secret
+    o.UseSignatureKeyFile("/secrets/ibkr-signature.pem");   // signs the handshake
+})
+```
+
+The encryption and signing keys are different keys. Swapping them produces a live session token that fails IBKR's signature check, which the client reports rather than using.
+
+## Things about IBKR that will otherwise surprise you
+
+**Sessions are two-tiered.** An outer read-only session gates every request but only reaches non-`/iserver` endpoints. A separate *brokerage* session gates trading, market data and everything else behind `/iserver`. A username may hold only one brokerage session at a time across all platforms, so logging into Trader Workstation displaces one held here. `EnsureBrokerageSessionAsync` establishes it; `BrokerageSessionStatus` keeps IBKR's four flags separate, and `Established` — not `Authenticated` — is the one to gate trading on.
+
+**Sessions time out.** After a few idle minutes IBKR drops the session. `AddBrokerageSessionKeepAlive()` pings `/tickle` every 60 seconds; without it, call `IIbkrSessionManager.KeepAliveAsync` yourself.
+
+**The first market data snapshot returns nothing.** IBKR treats it as a pre-flight that starts the backend streaming the instrument; snapshots are read from those open streams, not from a cache. Send the pre-flight with every field you will later want, then ask again. Each subscribed instrument consumes one of your market data lines (100 by default), so unsubscribe when you are done.
+
+**Call `/portfolio/accounts` first.** Other `/portfolio` endpoints return empty or stale data for an account until it has been listed. IBKR does not report an error, which makes this a slow thing to diagnose.
+
+**An order reply message is not a rejection.** Submission can answer with a prompt IBKR wants confirmed — usually a precautionary limit configured on your username. `SubmitAsync` returns `OrderSubmissionResult.ReplyRequired`, and the default `OrderReplyPolicy.Manual` leaves the decision to you, because these prompts carry margin, liquidity and price-constraint warnings. `OrderReplyPolicy.AutoConfirm` is opt-in. To stop being asked at all, suppress the message categories at the start of the session with `SuppressMessagesAsync`.
+
+**Rate limits are enforced client-side by default.** IBKR caps requests at 10/second per username and applies much tighter per-endpoint limits — `/iserver/scanner/params` allows one request per fifteen minutes. Exceeding them puts your IP in a ten-minute penalty box, and repeat violations can get it blocked, so the client paces requests rather than reacting to a `429`. Waits longer than `RateLimiting.MaxWait` (30 seconds) throw instead of blocking silently.
+
+**Time is encoded inconsistently, which is why this library uses NodaTime.** The same API sends epoch seconds, epoch milliseconds, epoch milliseconds inside a JSON string, `YYYYMMDD-hh:mm:ss`, `YYMMDDhhmmss`, `yyyyMMdd` and `HHmm` — sometimes two encodings of one value on the same object. Each field declares the converter for its documented format, so `ledger.RetrievedAt` (seconds) and `trade.TradeTime` (milliseconds) both arrive as a correct `Instant`. Trading schedules go further: opening and closing times are `LocalTime` values in the venue's own zone, reported as an IANA identifier, and `tradingScheduleDate` can mean "any Saturday" rather than a date — see `TradingScheduleDate`.
+
+## Endpoints not yet modelled
+
+`IIbkrApiClient` reaches anything this library has not covered yet, keeping authentication, rate limiting and error mapping:
+
+```csharp
+var watchlists = await apiClient.SendAsync<JsonElement>(
+    IbkrRequest.Get("/v1/api/iserver/watchlists"), ct);
+```
 
 ## Working on this repository
 
@@ -22,9 +124,13 @@ dotnet build IbkrDotNet.slnx -c Release
 dotnet test -c Release
 ```
 
-`tools/fetch-spec.sh` downloads IBKR's reference documentation as Markdown into a gitignored
-`artifacts/spec/` directory. IBKR serves a clean Markdown rendering of any docs page by appending
-`.md` to its URL, which makes it a reliable source when adding or verifying endpoint models.
+`tools/fetch-spec.sh` downloads IBKR's reference documentation as Markdown into a gitignored `artifacts/spec/`. IBKR serves a clean Markdown rendering of any docs page by appending `.md` to its URL, which makes it a reliable source when adding or verifying endpoint models. The response fixtures under `tests/IbkrDotNet.Trading.Tests/Fixtures/Responses/` are the example payloads from those pages, so deserialization is checked against what the API actually emits.
+
+`samples/IbkrDotNet.Samples.Console` is a read-only tour against a locally running gateway: session status, accounts, balances, a quote, daily bars and an order *preview*. It never places a live order.
+
+```bash
+dotnet run --project samples/IbkrDotNet.Samples.Console
+```
 
 ## License
 
