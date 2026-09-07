@@ -12,8 +12,9 @@
     <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
     <!-- CS1591: test code needs no documentation comments.
          CA1707: underscores make test names readable as sentences.
-         CA1034: nested records model one-off JSON shapes next to the test that uses them. -->
-    <NoWarn>$(NoWarn);CS1591;CA1707;CA1034</NoWarn>
+         CA1034: nested records model one-off JSON shapes next to the test that uses them.
+         CA5350: the OAuth 1.0a tests must use HMAC-SHA1, because IBKR's protocol does. -->
+    <NoWarn>$(NoWarn);CS1591;CA1707;CA1034;CA5350</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
