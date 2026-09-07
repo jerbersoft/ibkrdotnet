@@ -1,0 +1,14 @@
+{
+  "MAC": "12:B:B3:23:BF:A0",
+  "authenticated": true,
+  "competing": false,
+  "connected": true,
+  "established": true,
+  "fail": "",
+  "hardware_info": "21026956|06:8E:04:45:DA:8F",
+  "message": "",
+  "serverInfo": {
+    "serverName": "JifN19053",
+    "serverVersion": "Build 10.25.0p, Dec 5, 2023 5:48:12 PM"
+  }
+}

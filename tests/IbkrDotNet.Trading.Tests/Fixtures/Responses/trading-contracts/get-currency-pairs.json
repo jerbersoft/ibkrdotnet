@@ -1,0 +1,19 @@
+{
+  "USD": [
+    {
+      "symbol": "USD.SGD",
+      "conid": 37928772,
+      "ccyPair": "SGD"
+    },
+    {
+      "symbol": "USD.RON",
+      "conid": 38231133,
+      "ccyPair": "RON"
+    },
+    {
+      "symbol": "USD.CZK",
+      "conid": 34838409,
+      "ccyPair": "CZK"
+    }
+  ]
+}

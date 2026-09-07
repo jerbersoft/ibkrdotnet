@@ -1,0 +1,162 @@
+[
+  {
+    "acctId": "DU123456",
+    "allExchanges": "PAXOS",
+    "assetClass": "CRYPTO",
+    "avgCost": 27608.34921045,
+    "avgPrice": 27608.34921045,
+    "chineseName": "&#x7F8E;&#x5143;",
+    "conExchMap": [],
+    "conid": 479624278,
+    "contractDesc": "BTC CRYPTO",
+    "countryCode": "US",
+    "currency": "USD",
+    "displayRule": {
+      "displayRuleStep": [
+        {
+          "decimalDigits": 2,
+          "lowerEdge": 0,
+          "wholeDigits": 4
+        }
+      ],
+      "magnification": 0
+    },
+    "exchs": null,
+    "exerciseStyle": null,
+    "expiry": null,
+    "fullName": "BTC",
+    "hasOptions": false,
+    "incrementRules": [
+      {
+        "increment": 0.25,
+        "lowerEdge": 0
+      }
+    ],
+    "isEventContract": false,
+    "listingExchange": "PAXOS",
+    "mktPrice": 69814.3984375,
+    "mktValue": 255.4,
+    "model": "",
+    "multiplier": 0,
+    "name": "Bitcoin cryptocurrency",
+    "pageSize": 100,
+    "position": 0.00365831,
+    "realizedPnl": 0,
+    "strike": "0",
+    "ticker": "BTC",
+    "time": 6,
+    "type": "",
+    "undConid": 0,
+    "unrealizedPnl": 154.4
+  },
+  {
+    "acctId": "DU123456",
+    "allExchanges": "AMEX,CBOE,PHLX,PSE,ISE,BOX,BATS,NASDAQOM,CBOE2,NASDAQBX,MIAX,GEMINI,EDGX,MERCURY,PEARL,EMERALD,MEMX,WALLBETH,IBUSOPT",
+    "assetClass": "OPT",
+    "avgCost": 5801.0401,
+    "avgPrice": 58.010401,
+    "chineseName": "SPDR&#x6807;&#x666E;500 ETF&#x4FE1;&#x6258;",
+    "conExchMap": [],
+    "conid": 584891614,
+    "contractDesc": "SPY    JAN2025 440 C [SPY   250117C00440000 100]",
+    "countryCode": "US",
+    "currency": "USD",
+    "displayRule": {
+      "displayRuleStep": [
+        {
+          "decimalDigits": 2,
+          "lowerEdge": 0,
+          "wholeDigits": 4
+        }
+      ],
+      "magnification": 0
+    },
+    "exchs": null,
+    "exerciseStyle": null,
+    "expiry": "20250117",
+    "fullName": "SPY Jan17'25 440 Call",
+    "hasOptions": false,
+    "incrementRules": [
+      {
+        "increment": 0.01,
+        "lowerEdge": 0
+      }
+    ],
+    "isEventContract": false,
+    "isUS": true,
+    "lastTradingDay": "20250117",
+    "listingExchange": "AMEX",
+    "mktPrice": 95.70706175,
+    "mktValue": 9570.71,
+    "model": "",
+    "multiplier": 100,
+    "name": "SPDR S&P 500 ETF TRUST",
+    "pageSize": 100,
+    "position": 1,
+    "putOrCall": "C",
+    "realizedPnl": 0,
+    "strike": "440",
+    "ticker": "SPY",
+    "time": 26,
+    "type": "",
+    "undConid": 756733,
+    "unrealizedPnl": 3769.67,
+    "crossCurrency": false,
+    "undComp": "SPDR S&P 500 ETF TRUST",
+    "undSym": "SPY"
+  },
+  {
+    "acctId": "DU123456",
+    "allExchanges": "AMEX,NYSE,CBOE,PHLX,CHX,ARCA,ISLAND,ISE,IDEAL,NASDAQQ,REALNYSE,DRCTEDGE,BEX,BATS,NITEECN,EDGEA,CSFBALGO,PSX,BYX,ITG,PDQ,IBKRATS,NYSEFLOOR,CITADEL,NYSEDARK,MIAX,IBDARK,CITADELDP,NASDDARK,IEX,WEDBUSH,SUMMER,WINSLOW,FINRA,LIQITG,UBSDARK,BTIG,VIRTU,JEFF,OPCO,COWEN,DBK,JPMC,EDGX,JANE,NEEDHAM,FRACSHARE,RBCALGO,VIRTUDP,BAYCREST,FOXRIVER,MND,NITEEXST,PEARL,GSDARK,NITERTL,NYSENAT,IEXMID,HRT,FLOWTRADE,HRTDP,JANELP,PEAK6,CTDLZERO,HRTMID,JANEZERO,HRTEXST,IMCLP,LTSE,SOCGENDP,MEMX,INTELCROS,VIRTUBYIN,JUMPTRADE,NITEZERO,TPLUS1,XTXEXST,XTXDP,XTXMID,COWENLP,BARCDP,JUMPLP,OLDMCLP,RBCCMALP,WALLBETH,IBEOS,JONES,GSLP,BLUEOCEAN,USIBSILP,OVERNIGHT,JANEMID,IBATSEOS,HRTZERO,VIRTUALGO,G1XLP,VIRTUMID,GLOBALXLP,CTDLMID,TPLUS0",
+    "assetClass": "STK",
+    "avgCost": 144.46141,
+    "avgPrice": 144.46141,
+    "chineseName": "&#x56FD;&#x9645;&#x5546;&#x4E1A;&#x673A;&#x5668;",
+    "conExchMap": [],
+    "conid": 8314,
+    "contractDesc": "IBM",
+    "countryCode": "US",
+    "currency": "USD",
+    "displayRule": {
+      "displayRuleStep": [
+        {
+          "decimalDigits": 2,
+          "lowerEdge": 0,
+          "wholeDigits": 4
+        }
+      ],
+      "magnification": 0
+    },
+    "exchs": null,
+    "exerciseStyle": null,
+    "expiry": null,
+    "fullName": "IBM",
+    "group": "Computers",
+    "hasOptions": true,
+    "incrementRules": [
+      {
+        "increment": 0.01,
+        "lowerEdge": 0
+      }
+    ],
+    "isEventContract": false,
+    "isUS": true,
+    "listingExchange": "NYSE",
+    "mktPrice": 185.17599485,
+    "mktValue": 261468.5,
+    "model": "",
+    "multiplier": 0,
+    "name": "INTL BUSINESS MACHINES CORP",
+    "pageSize": 100,
+    "position": 1412,
+    "realizedPnl": 0,
+    "sector": "Technology",
+    "sectorGroup": "Computer Services",
+    "strike": "0",
+    "ticker": "IBM",
+    "time": 38,
+    "type": "COMMON",
+    "undConid": 0,
+    "unrealizedPnl": 57488.99
+  }
+]

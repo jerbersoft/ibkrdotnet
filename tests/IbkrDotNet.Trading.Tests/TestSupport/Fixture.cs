@@ -17,7 +17,15 @@ public static class Fixture
 
     public static string ReadText(string relativePath)
     {
-        var name = Prefix + relativePath.Replace('/', '.');
+        // MSBuild turns '-' into '_' in the directory portion of a resource name but leaves the
+        // file name alone, so 'trading-session/logout.json' becomes 'trading_session.logout.json'.
+        var segments = relativePath.Split('/');
+        for (var i = 0; i < segments.Length - 1; i++)
+        {
+            segments[i] = segments[i].Replace('-', '_');
+        }
+
+        var name = Prefix + string.Join('.', segments);
         using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name)
             ?? throw new InvalidOperationException(
                 $"Fixture '{relativePath}' was not found. Embedded resources: " +

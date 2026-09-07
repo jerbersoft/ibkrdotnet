@@ -1,0 +1,10 @@
+{
+  "matchedAccounts": [
+    {
+      "accountId": "U1234567",
+      "alias": "U1234567",
+      "allocationId": "U1234567"
+    }
+  ],
+  "pattern": "U1"
+}

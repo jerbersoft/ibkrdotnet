@@ -1,0 +1,62 @@
+[
+  {
+    "description": "1*649180695-1*654503299",
+    "legs": [
+      {
+        "conid": "649180695",
+        "ratio": 1
+      },
+      {
+        "conid": "654503299",
+        "ratio": -1
+      }
+    ],
+    "name": "CP.CP695fcbb4",
+    "positions": [
+      {
+        "acctId": "DU5240685",
+        "assetClass": "FUT",
+        "avgCost": 348114.52,
+        "avgPrice": 6962.2904,
+        "conExchMap": [],
+        "conid": 649180695,
+        "contractDesc": "ES       MAR2026",
+        "currency": "USD",
+        "exchs": "None",
+        "exerciseStyle": "None",
+        "expiry": "None",
+        "mktPrice": 6962,
+        "mktValue": 348100,
+        "multiplier": 1.1,
+        "position": 1,
+        "putOrCall": "None",
+        "realizedPnl": 0,
+        "strike": "0",
+        "undConid": 0,
+        "unrealizedPnl": -14.52
+      },
+      {
+        "acctId": "DU5240685",
+        "assetClass": "FUT",
+        "avgCost": 49997.98,
+        "avgPrice": 999.9596,
+        "conExchMap": [],
+        "conid": 654503299,
+        "contractDesc": "ES       DEC2028",
+        "currency": "USD",
+        "exchs": "None",
+        "exerciseStyle": "None",
+        "expiry": "None",
+        "mktPrice": 7530.1928711,
+        "mktValue": -376509.64,
+        "multiplier": 1.1,
+        "position": -1,
+        "putOrCall": "None",
+        "realizedPnl": 0,
+        "strike": "0",
+        "undConid": 0,
+        "unrealizedPnl": -326511.66
+      }
+    ]
+  }
+]

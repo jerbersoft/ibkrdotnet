@@ -1,0 +1,21 @@
+[
+  {
+    "assetClass": "STK",
+    "avgCost": null,
+    "avgPrice": 262.2430710711693,
+    "conid": 265598,
+    "currency": "USD",
+    "description": "AAPL",
+    "group": "Computers",
+    "isLastToLoq": false,
+    "marketPrice": 256.39068603515625,
+    "marketValue": 82292949.324646,
+    "model": "",
+    "position": 320967,
+    "realizedPnl": 0,
+    "secType": "STK",
+    "sector": "Technology",
+    "timestamp": 1767885880,
+    "unrealizedPnl": -1878422.467854008
+  }
+]

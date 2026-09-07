@@ -1,0 +1,31 @@
+{
+  "PrepaidCrypto-P": false,
+  "PrepaidCrypto-Z": false,
+  "accountAlias": "Retirement",
+  "accountId": "DU123456",
+  "accountStatus": 1590724800000,
+  "accountTitle": "John Smith, LLC",
+  "accountVan": "DU123456",
+  "acctCustType": "LLC",
+  "brokerageAccess": false,
+  "businessType": "IB_SALES",
+  "clearingStatus": "O",
+  "covestor": false,
+  "currency": "USD",
+  "desc": "DU123456",
+  "displayName": "John Smith, LLC",
+  "ibEntity": "IBLLC-US",
+  "id": "DU123456",
+  "noClientTrading": false,
+  "parent": {
+    "accountId": "",
+    "isMChild": false,
+    "isMParent": false,
+    "isMultiplex": false,
+    "mmc": []
+  },
+  "trackVirtualFXPortfolio": true,
+  "tradingType": "STKNOPT",
+  "type": "DEMO",
+  "faclient": false
+}

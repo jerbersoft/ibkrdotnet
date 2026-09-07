@@ -1,0 +1,21 @@
+{
+  "accountId": "U1234567",
+  "users": [
+    {
+      "roleId": "OWNER",
+      "hasRightCodeInd": true,
+      "userName": "user1234",
+      "entity": {
+        "entityName": "John Smith",
+        "entityType": "INDIVIDUAL",
+        "firstName": "John",
+        "lastName": "Smith"
+      }
+    }
+  ],
+  "applicant": {
+    "signatures": [
+      "John Smith"
+    ]
+  }
+}
