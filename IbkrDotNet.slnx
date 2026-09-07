@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/IbkrDotNet.Extensions.DependencyInjection/IbkrDotNet.Extensions.DependencyInjection.csproj" />
+    <Project Path="src/IbkrDotNet.Trading/IbkrDotNet.Trading.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/IbkrDotNet.Trading.Tests/IbkrDotNet.Trading.Tests.csproj" />
+  </Folder>
+</Solution>

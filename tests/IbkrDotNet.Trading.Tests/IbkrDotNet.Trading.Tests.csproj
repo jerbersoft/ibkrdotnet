@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/IbkrDotNet.Trading/IbkrDotNet.Trading.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Fixtures/**/*.json" />
+  </ItemGroup>
+
+</Project>
