@@ -4,6 +4,7 @@
     <Project Path="src/IbkrDotNet.Trading/IbkrDotNet.Trading.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/IbkrDotNet.Extensions.DependencyInjection.Tests/IbkrDotNet.Extensions.DependencyInjection.Tests.csproj" />
     <Project Path="tests/IbkrDotNet.Trading.Tests/IbkrDotNet.Trading.Tests.csproj" />
   </Folder>
 </Solution>
