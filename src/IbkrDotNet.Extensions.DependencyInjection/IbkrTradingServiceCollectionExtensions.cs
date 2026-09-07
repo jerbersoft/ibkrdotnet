@@ -77,9 +77,15 @@ public static class IbkrTradingServiceCollectionExtensions
             .AddHttpMessageHandler<IbkrRateLimitHandler>()
             .AddHttpMessageHandler<IbkrAuthenticationHandler>();
 
-        services.TryAddSingleton<IIbkrApiClient>(provider => new IbkrApiClient(
-            provider.GetRequiredService<IHttpClientFactory>().CreateClient(IbkrApiClient.HttpClientName),
-            provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<IbkrApiClient>>()));
+        // The factory is passed in rather than a resolved client: a singleton holding one client
+        // would pin the handler chain created at startup and never see a DNS change.
+        services.TryAddSingleton<IIbkrApiClient>(provider =>
+        {
+            var factory = provider.GetRequiredService<IHttpClientFactory>();
+            return new IbkrApiClient(
+                () => factory.CreateClient(IbkrApiClient.HttpClientName),
+                provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<IbkrApiClient>>());
+        });
 
         services.TryAddSingleton<ISessionClient, SessionClient>();
         services.TryAddSingleton<IAccountsClient, AccountsClient>();

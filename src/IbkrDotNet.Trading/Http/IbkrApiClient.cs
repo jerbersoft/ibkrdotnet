@@ -17,17 +17,41 @@ public sealed class IbkrApiClient : IIbkrApiClient
 
     private const int MaxLoggedBodyLength = 2048;
 
-    private readonly HttpClient _httpClient;
+    private readonly Func<HttpClient> _httpClientFactory;
     private readonly ILogger<IbkrApiClient> _logger;
 
-    /// <summary>Creates the client.</summary>
+    /// <summary>Creates the client over a single HTTP client.</summary>
     /// <param name="httpClient">The configured HTTP client.</param>
     /// <param name="logger">The logger.</param>
+    /// <remarks>
+    /// Suited to tests and to short-lived callers that construct the pipeline by hand. Long-running
+    /// hosts should prefer the <c>Func&lt;HttpClient&gt;</c> overload, so the underlying handler can
+    /// be rotated.
+    /// </remarks>
     public IbkrApiClient(HttpClient httpClient, ILogger<IbkrApiClient> logger)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
-        _httpClient = httpClient;
+        _httpClientFactory = () => httpClient;
+        _logger = logger;
+    }
+
+    /// <summary>Creates the client over a factory that supplies an HTTP client per request.</summary>
+    /// <param name="httpClientFactory">Supplies the HTTP client for each request.</param>
+    /// <param name="logger">The logger.</param>
+    /// <remarks>
+    /// This is what the dependency injection package uses, passing
+    /// <c>() =&gt; IHttpClientFactory.CreateClient(<see cref="HttpClientName"/>)</c>. A singleton
+    /// holding one resolved client would pin the handler chain built at startup, so the connection
+    /// pool would never pick up a DNS change — the long-lived <see cref="HttpClient"/> problem
+    /// <c>IHttpClientFactory</c> exists to solve. Resolving per request is the cheap path: the
+    /// client it returns is a thin wrapper over a pooled handler.
+    /// </remarks>
+    public IbkrApiClient(Func<HttpClient> httpClientFactory, ILogger<IbkrApiClient> logger)
+    {
+        ArgumentNullException.ThrowIfNull(httpClientFactory);
+        ArgumentNullException.ThrowIfNull(logger);
+        _httpClientFactory = httpClientFactory;
         _logger = logger;
     }
 
@@ -90,7 +114,7 @@ public sealed class IbkrApiClient : IIbkrApiClient
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return _httpClient.SendAsync(
+        return _httpClientFactory().SendAsync(
             BuildMessage(request),
             HttpCompletionOption.ResponseHeadersRead,
             cancellationToken);
@@ -107,7 +131,7 @@ public sealed class IbkrApiClient : IIbkrApiClient
         HttpResponseMessage response;
         try
         {
-            response = await _httpClient
+            response = await _httpClientFactory()
                 .SendAsync(BuildMessage(request), cancellationToken)
                 .ConfigureAwait(false);
         }
