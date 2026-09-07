@@ -18,7 +18,8 @@ public class RateLimitHandlerTests
 
         var scheduler = new FakeDelayScheduler();
         var stub = new StubHttpMessageHandler();
-        var handler = new IbkrRateLimitHandler(options, scheduler) { InnerHandler = stub };
+        var registry = new IbkrRateLimiterRegistry(options, scheduler);
+        var handler = new IbkrRateLimitHandler(registry) { InnerHandler = stub };
 
         return (new HttpClient(handler) { BaseAddress = new Uri("https://localhost:5000") }, scheduler, stub);
     }
@@ -117,6 +118,37 @@ public class RateLimitHandlerTests
 
         Assert.Equal(Duration.Zero, scheduler.TotalDelay);
         Assert.Equal(2, stub.Requests.Count);
+    }
+
+    [Fact]
+    public async Task Keeps_pacing_across_the_handler_rotation_that_ihttpclientfactory_performs()
+    {
+        // IHttpClientFactory builds a fresh handler chain on its own lifetime. The windows live in
+        // the registry so a rotation does not hand the caller a clean slate -- which would be
+        // invisible against a one-second limit and completely wrong against a fifteen-minute one.
+        var scheduler = new FakeDelayScheduler();
+        var registry = new IbkrRateLimiterRegistry(new IbkrTradingOptions(), scheduler);
+        var uri = new Uri("/v1/api/iserver/scanner/params", UriKind.Relative);
+
+        using (var firstStub = new StubHttpMessageHandler())
+        using (var firstClient = new HttpClient(new IbkrRateLimitHandler(registry) { InnerHandler = firstStub })
+               {
+                   BaseAddress = new Uri("https://localhost:5000"),
+               })
+        {
+            await firstClient.GetAsync(uri, TestContext.Current.CancellationToken);
+        }
+
+        using var secondStub = new StubHttpMessageHandler();
+        using var secondClient = new HttpClient(new IbkrRateLimitHandler(registry) { InnerHandler = secondStub })
+        {
+            BaseAddress = new Uri("https://localhost:5000"),
+        };
+
+        await Assert.ThrowsAsync<IbkrRateLimitExceededException>(
+            () => secondClient.GetAsync(uri, TestContext.Current.CancellationToken));
+
+        registry.Dispose();
     }
 
     [Fact]

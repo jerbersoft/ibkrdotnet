@@ -60,6 +60,10 @@ public static class IbkrTradingServiceCollectionExtensions
         services.TryAddSingleton(DateTimeZoneProviders.Tzdb);
         services.TryAddSingleton<IbkrSessionState>();
 
+        // The limiters are a singleton: IHttpClientFactory rotates handler chains on its own
+        // lifetime, and holding the windows in the handler would reset them on every rotation.
+        services.TryAddSingleton<IbkrRateLimiterRegistry>();
+
         // The gateway is the default; UseOAuth2 and UseOAuth1a replace it.
         services.TryAddSingleton<IIbkrAuthenticator>(ClientPortalGatewayAuthenticator.Instance);
 
