@@ -48,19 +48,39 @@ Inject an individual client — `IOrdersClient`, `IPortfolioClient`, and so on �
 
 ## Choosing an authentication mechanism
 
-IBKR offers three ways in. They differ only in how a request is credentialed; resource paths and payloads are identical, so switching is a configuration change.
+IBKR offers three ways in. They differ only in how a request is credentialed — resource paths and payloads are identical, so switching is a configuration change.
 
-| Mechanism | For | Setup |
+| Mechanism | Who can use it | How you get in |
 | --- | --- | --- |
-| **Client Portal Gateway** | Retail and individual clients | `.UseClientPortalGateway()` — the default |
-| **OAuth 2.0** | Organizations, Financial Advisors, IBrokers | `.UseOAuth2(o => ...)` |
-| **OAuth 1.0a** | Financial Advisors, organizations, third-party vendors | `.UseOAuth1a(o => ...)` |
+| **Client Portal Gateway** | Anyone with an IBKR Pro account | Self-serve: download and run IBKR's gateway |
+| **OAuth 2.0** | Organizations, Financial Advisors, IBrokers. **Not individuals** | Apply by email, then register a public key |
+| **OAuth 1.0a** | Financial Advisors, organizations, third-party vendors | Apply by email, then a self-service portal |
+
+Only the first is self-serve. Both OAuth paths open with an email to IBKR and an approval process measured in weeks, so if you are an individual trading your own account, the gateway is the path — OAuth 2.0 is closed to individual account structures outright.
+
+The two OAuth mechanisms talk to `https://api.ibkr.com` directly and need no gateway process running; set `Environment = IbkrEnvironment.Production` with either.
 
 ### Client Portal Gateway
 
-Download and run IBKR's gateway, then log in at `https://localhost:5000`. The gateway holds the credentials and proxies authenticated requests, so nothing needs signing on this side. Its certificate is self-signed, so the first request fails on TLS until you trust it.
+A Java process that holds your credentials and proxies authenticated requests, so nothing needs signing on this side.
 
-If the gateway is on another port — macOS serves its AirPlay receiver on 5000, so moving it is common — set `BaseAddress` rather than `Environment`:
+1. Have a funded IBKR Pro account.
+2. Install Java, if `java -version` does not answer.
+3. Download the gateway from IBKR's [installation guide](https://ibkrcampus.com/docs/web-api/authentication/cpgw/installation-authentication) and unzip it.
+4. From the unzipped `clientportal.gw` directory: `bin/run.sh root/conf.yaml` — on Windows, `bin\run.bat root\conf.yaml`.
+5. Log in at `https://localhost:5000` with your IBKR credentials.
+
+```csharp
+builder.Services
+    .AddIbkrTrading(options => options.Environment = IbkrEnvironment.ClientPortalGateway)
+    .UseClientPortalGateway();
+```
+
+The gateway's certificate is self-signed, so the first request fails on TLS until you trust it.
+
+**A paper account needs a different username.** The gateway login has no live/paper slider — the paper account has credentials of its own. Find them in Client Portal under Settings → Account Configuration → [Paper Trading Account](https://ibkrcampus.com/docs/web-api/authentication/paper), where you can also reset the paper password if you have never set one.
+
+**To move off port 5000** — macOS serves its AirPlay receiver there, so this comes up often — edit `listenPort` on line 4 of `root/conf.yaml` inside the gateway directory and restart. There is no command-line flag for it. Then set `BaseAddress` rather than `Environment`:
 
 ```csharp
 options.BaseAddress = new Uri("https://localhost:5050");
@@ -68,41 +88,64 @@ options.BaseAddress = new Uri("https://localhost:5050");
 
 ### OAuth 2.0
 
+**Getting credentials.** Email [api-solutions@interactivebrokers.com](mailto:api-solutions@interactivebrokers.com) for registration guidance; the scopes you are granted are decided during that process. Once approved, generate an RSA keypair of at least 3072 bits and send IBKR **the public key only**, through the Secure Message Center, from a user on the live account:
+
+```bash
+openssl genrsa -out privatekey.pem 3072
+openssl rsa -pubout -in privatekey.pem -out publickey.pem -outform PEM
+```
+
+IBKR issues a client ID and a key ID in return. The key ID is how IBKR knows which registered public key verifies your signature, so it changes when you rotate the key and the client ID does not.
+
 ```csharp
 .UseOAuth2(o =>
 {
     o.ClientId        = "...";     // issued at registration
     o.ClientKeyId     = "...";     // identifies the registered public key
     o.Credential      = "...";     // the IBKR username the session is for
-    o.ClientIpAddress = "...";     // IBKR validates this against the request's origin
-    o.UsePrivateKeyFile("/secrets/ibkr-oauth2.pem");
+    o.ClientIpAddress = "...";     // your public egress address
+    o.UsePrivateKeyFile("/secrets/ibkr-oauth2.pem");   // the private half of the pair above
 })
 ```
+
+`Scope` defaults to `sso-sessions.write`, which is what establishing a brokerage session requires.
 
 `ClientIpAddress` has no default. IBKR validates the claim against the address the request actually arrives from, and its reference implementation discovers it by calling a third-party lookup service — not something this library will do on your behalf unasked. Set it, or supply `ClientIpAddressResolver`.
 
 ### OAuth 1.0a
 
+**Getting credentials** depends on which of IBKR's two categories you fall into, and they are not the same process.
+
+*First party* means you are trading your own or your institution's capital — a financial advisor, a hedge fund, an organisation. Email [apiintegration@interactivebrokers.com](mailto:apiintegration@interactivebrokers.com) answering three questions: what you intend to do with OAuth access, which accounts will use it, and whether the client application is being built in-house or by a third-party developer.
+
+*Third party* means you are offering trading to people outside your organisation — a robo-advisor, a public app, an auto-trader. That is [a much longer road](https://ibkrcampus.com/docs/web-api/authentication/oauth-1a/third-party-oauth/registration-process): IBKR estimates 2–3 weeks of vetting, 3–6 weeks of compliance review and 3–5 weeks of legal and key generation, and expects a finished, publicly documented product before it starts. Contact [api-solutions@interactivebrokers.com](mailto:api-solutions@interactivebrokers.com).
+
+Approved first parties get a link to IBKR's Self-Service Portal, which generates the consumer key, the encryption keys and the access token pair. The Diffie-Hellman prime is issued alongside the consumer key.
+
+> **A newly registered consumer key does not work until after midnight** — New York, Zug or Hong Kong, whichever region you are in. Used before that reset it returns `401 Invalid Consumer`, which looks exactly like a signing bug and is not one.
+
 ```csharp
 .UseOAuth1a(o =>
 {
-    o.ConsumerKey        = "...";
+    o.ConsumerKey        = "...";   // Self-Service Portal
     o.Realm              = OAuth1aOptions.LimitedPoaRealm;  // TestRealm for TESTCONS
-    o.AccessToken        = "...";
+    o.AccessToken        = "...";   // Self-Service Portal
     o.AccessTokenSecret  = "...";   // base64, still encrypted
-    o.DiffieHellmanPrime = "...";   // issued with the consumer key
+    o.DiffieHellmanPrime = "...";   // hex, issued with the consumer key
     o.UseEncryptionKeyFile("/secrets/ibkr-encryption.pem"); // decrypts the token secret
     o.UseSignatureKeyFile("/secrets/ibkr-signature.pem");   // signs the handshake
 })
 ```
 
-The encryption and signing keys are different keys. Swapping them produces a live session token that fails IBKR's signature check, which the client reports rather than using.
+The encryption and signing keys are different keys. Swapping them produces a live session token that fails IBKR's signature check, which the client reports rather than using. The generator is fixed at 2 and defaulted accordingly; the prime is read as hexadecimal, with or without a `0x` prefix, and must match IBKR's server-side value exactly or the shared secret cannot be derived.
+
+The library performs the whole handshake — RSA-decrypting the access token secret, the Diffie-Hellman exchange, deriving the live session token and validating it — on first use, then signs each request with the resulting token and renews it when the expiry IBKR returned passes — documented as 24 hours.
 
 ## Things about IBKR that will otherwise surprise you
 
 **Sessions are two-tiered.** An outer read-only session gates every request but only reaches non-`/iserver` endpoints. A separate *brokerage* session gates trading, market data and everything else behind `/iserver`. A username may hold only one brokerage session at a time across all platforms, so logging into Trader Workstation displaces one held here. `EnsureBrokerageSessionAsync` establishes it; `BrokerageSessionStatus` keeps IBKR's four flags separate, and `Established` — not `Authenticated` — is the one to gate trading on.
 
-**Sessions time out.** After a few idle minutes IBKR drops the session. `AddBrokerageSessionKeepAlive()` pings `/tickle` every 60 seconds; without it, call `IIbkrSessionManager.KeepAliveAsync` yourself.
+**Sessions time out, and then they expire.** After roughly five idle minutes IBKR drops the session; `AddBrokerageSessionKeepAlive()` pings `/tickle` every 60 seconds to stop that, and without it you call `IIbkrSessionManager.KeepAliveAsync` yourself. Keeping it alive only buys 24 hours, though — a session expires outright at midnight in New York, Zug or Hong Kong, whichever you connect nearest to, so a long-running process has to be able to establish a new one rather than assuming the keep-alive is enough.
 
 **The first market data snapshot returns nothing.** IBKR treats it as a pre-flight that starts the backend streaming the instrument; snapshots are read from those open streams, not from a cache. Send the pre-flight with every field you will later want, then ask again. Each subscribed instrument consumes one of your market data lines (100 by default), so unsubscribe when you are done.
 
