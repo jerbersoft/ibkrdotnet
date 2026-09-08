@@ -1,0 +1,31 @@
+{
+  "categories": {
+    "g17490": {
+      "markets": [
+        {
+          "conid": 732764706,
+          "exchange": "FORECASTX",
+          "name": "United States Carbon Dioxide Emissions",
+          "product_conid": 732764711,
+          "symbol": "USCE"
+        },
+        {
+          "conid": 732764712,
+          "exchange": "FORECASTX",
+          "name": "United States Drought",
+          "product_conid": 732764717,
+          "symbol": "USDR"
+        }
+      ],
+      "name": "United States",
+      "parent_id": "g7369"
+    },
+    "g5351": {
+      "name": "Environmental"
+    },
+    "g7369": {
+      "name": "Climate Change",
+      "parent_id": "g5351"
+    }
+  }
+}

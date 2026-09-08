@@ -1,0 +1,54 @@
+{
+    "market_name": "Illinois Governor General Election",
+    "exchange": "FORECASTX",
+    "symbol": "MXXIL",
+    "logo_category": "g137914",
+    "exclude_historical_data": true,
+    "payout": 1.0,
+    "contracts": [
+        {
+            "conid": 849139254,
+            "side": "Y",
+            "expiration": "20261204",
+            "strike": 1.0,
+            "strike_label": "JB Pritzker",
+            "expiry_label": "2026",
+            "underlying_conid": 848769488,
+            "time_specifier": "2026.11.3",
+            "party": "Democrat"
+        },
+        {
+            "conid": 849139257,
+            "side": "N",
+            "expiration": "20261204",
+            "strike": 1.0,
+            "strike_label": "JB Pritzker",
+            "expiry_label": "2026",
+            "underlying_conid": 848769488,
+            "time_specifier": "2026.11.3",
+            "party": "Democrat"
+        },
+        {
+            "conid": 849139268,
+            "side": "Y",
+            "expiration": "20261204",
+            "strike": 3.0,
+            "strike_label": "Darren Bailey",
+            "expiry_label": "2026",
+            "underlying_conid": 848769488,
+            "time_specifier": "2026.11.3",
+            "party": "Republican"
+        },
+        {
+            "conid": 849139275,
+            "side": "N",
+            "expiration": "20261204",
+            "strike": 3.0,
+            "strike_label": "Darren Bailey",
+            "expiry_label": "2026",
+            "underlying_conid": 848769488,
+            "time_specifier": "2026.11.3",
+            "party": "Republican"
+        }
+    ]
+}

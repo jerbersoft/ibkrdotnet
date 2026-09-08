@@ -1,0 +1,17 @@
+{
+  "conid_yes": 805953033,
+  "conid_no": 805953036,
+  "question": "Will US carbon dioxide emmissions exceed 5,050 million metric tons in 2035?",
+  "side": "Y",
+  "strike_label": "Above 5,050",
+  "strike": 5050,
+  "exchange": "FORECASTX",
+  "expiration": "20360430",
+  "symbol": "USCE",
+  "category": "g5351",
+  "logo_category": "g7369",
+  "measured_period": "Dec31'35",
+  "market_name": "United States Carbon Dioxide Emissions",
+  "underlying_conid": 732764706,
+  "payout": 1
+}

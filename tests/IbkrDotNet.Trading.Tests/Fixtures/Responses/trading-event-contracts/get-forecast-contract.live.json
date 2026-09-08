@@ -1,0 +1,20 @@
+{
+    "conid_yes": 849139254,
+    "conid_no": 849139257,
+    "question": "Will JB Pritzker win the Illinois general election for Governor in 2026?",
+    "side": "Y",
+    "strike_label": "JB Pritzker",
+    "strike": 1.0,
+    "exchange": "FORECASTX",
+    "expiration": "20261204",
+    "symbol": "MXXIL",
+    "category": "g137821",
+    "logo_category": "g137914",
+    "measured_period": "Nov03'26",
+    "market_name": "Illinois Governor General Election",
+    "underlying_conid": 848769488,
+    "payout": 1.0,
+    "product_conid": 848769493,
+    "party": "Democrat",
+    "is_restricted": false
+}

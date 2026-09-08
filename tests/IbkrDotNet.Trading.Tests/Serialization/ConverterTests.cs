@@ -398,6 +398,96 @@ public class ConverterTests
         Assert.Equal(HistoryPeriod.OneDay, result.Period);
         Assert.Equal(json, Write(result));
     }
+
+    // ---- LocalTime: the twelve-hour clock ---------------------------------------------------
+
+    private sealed record ClockTimes
+    {
+        [JsonPropertyName("open")]
+        [JsonConverter(typeof(IbkrClockTimeConverter))]
+        public LocalTime? Open { get; init; }
+    }
+
+    [Theory]
+    [InlineData("12:00 AM", 0, 0)]
+    [InlineData("4:15 PM", 16, 15)]
+    [InlineData("11:59 PM", 23, 59)]
+    [InlineData("12:00 PM", 12, 0)]
+    public void ClockTime_reads_the_event_contract_schedule(string wire, int hour, int minute)
+    {
+        // Midnight and noon are the two the twelve-hour clock gets wrong if the pattern is careless:
+        // both are written "12", and they are twelve hours apart.
+        var result = Read<ClockTimes>($$"""{"open":"{{wire}}"}""");
+
+        Assert.Equal(new LocalTime(hour, minute), result.Open);
+    }
+
+    [Fact]
+    public void ClockTime_round_trips()
+    {
+        Assert.Equal(
+            """{"open":"4:15 PM"}""",
+            Write(new ClockTimes { Open = new LocalTime(16, 15) }));
+    }
+
+    [Fact]
+    public void ClockTime_refuses_the_other_wall_clock_format_ibkr_uses()
+    {
+        // HHmm belongs to IbkrLocalTimeConverter. Accepting it here would read "0415" as a quarter
+        // past four in the morning on an endpoint that never sends that format.
+        Assert.Throws<IbkrSerializationException>(() => Read<ClockTimes>("""{"open":"0415"}"""));
+    }
+
+    // ---- IsoDayOfWeek -----------------------------------------------------------------------
+
+    private sealed record ScheduleDay
+    {
+        [JsonPropertyName("day_of_week")]
+        [JsonConverter(typeof(IsoDayOfWeekConverter))]
+        public IsoDayOfWeek? Day { get; init; }
+    }
+
+    [Fact]
+    public void DayOfWeek_reads_the_english_name()
+    {
+        Assert.Equal(IsoDayOfWeek.Saturday, Read<ScheduleDay>("""{"day_of_week":"Saturday"}""").Day);
+        Assert.Equal(IsoDayOfWeek.Monday, Read<ScheduleDay>("""{"day_of_week":"Monday"}""").Day);
+    }
+
+    [Fact]
+    public void DayOfWeek_treats_ibkrs_absent_markers_as_null_but_None_as_a_failure()
+    {
+        // "" is one of IBKR's stand-ins for absent and is absorbed like any other. The literal
+        // "None" is not: it is the enum's own zero value, and reading it back would claim IBKR
+        // named a day it did not.
+        Assert.Null(Read<ScheduleDay>("""{"day_of_week":""}""").Day);
+        Assert.Throws<IbkrSerializationException>(
+            () => Read<ScheduleDay>("""{"day_of_week":"Caturday"}"""));
+    }
+
+    // ---- DateTimeZone: the alias IBKR actually sends -----------------------------------------
+
+    private sealed record ExchangeZone
+    {
+        [JsonPropertyName("timezone")]
+        [JsonConverter(typeof(DateTimeZoneConverter))]
+        public DateTimeZone? Zone { get; init; }
+    }
+
+    [Fact]
+    public void TimeZone_resolves_the_tzdb_link_the_event_contracts_send()
+    {
+        // Event contracts report "US/Central", a backward-compatibility link, where the rest of the
+        // API sends canonical identifiers like "America/New_York". NodaTime's TZDB provider carries
+        // the links, so the alias resolves and behaves identically to the canonical zone.
+        var result = Read<ExchangeZone>("""{"timezone":"US/Central"}""");
+
+        Assert.NotNull(result.Zone);
+        var noon = new LocalDateTime(2026, 1, 15, 12, 0);
+        Assert.Equal(
+            noon.InZoneLeniently(DateTimeZoneProviders.Tzdb["America/Chicago"]).ToInstant(),
+            noon.InZoneLeniently(result.Zone).ToInstant());
+    }
 }
 
 public class LooseWireValueTests
@@ -482,4 +572,5 @@ public class LooseWireValueTests
         Assert.Equal(1, result["AUD"]);
         Assert.Equal(2, result["BASE"]);
     }
+
 }

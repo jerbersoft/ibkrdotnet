@@ -103,6 +103,7 @@ var context = await ReadOnlyChecks.RunAsync(ibkr, probe, account, cancellationTo
 await WatchlistChecks.RunAsync(ibkr, probe, context, cancellationToken);
 await ScannerChecks.RunAsync(ibkr, probe, cancellationToken);
 await NotificationChecks.RunAsync(ibkr, probe, cancellationToken);
+await EventContractChecks.RunAsync(ibkr, probe, cancellationToken);
 
 // IBKR gives paper accounts a DU prefix. There is deliberately no flag to override the check: an
 // order sweep against a funded account should take more than a command line to arrange.

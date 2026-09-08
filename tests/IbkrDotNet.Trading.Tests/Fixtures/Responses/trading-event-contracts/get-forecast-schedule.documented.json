@@ -1,0 +1,44 @@
+{
+  "timezone": "US/Central",
+  "trading_schedules": [
+    {
+      "day_of_week": "Saturday",
+      "trading_times": [
+        {
+          "open": "12:00 AM",
+          "close": "4:00 PM"
+        },
+        {
+          "open": "4:15 PM",
+          "close": "11:59 PM"
+        }
+      ]
+    },
+    {
+      "day_of_week": "Sunday",
+      "trading_times": [
+        {
+          "open": "12:00 AM",
+          "close": "4:00 PM"
+        },
+        {
+          "open": "4:15 PM",
+          "close": "11:59 PM"
+        }
+      ]
+    },
+    {
+      "day_of_week": "Monday",
+      "trading_times": [
+        {
+          "open": "12:00 AM",
+          "close": "4:00 PM"
+        },
+        {
+          "open": "4:15 PM",
+          "close": "11:59 PM"
+        }
+      ]
+    }
+  ]
+}

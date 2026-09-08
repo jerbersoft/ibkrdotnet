@@ -1,0 +1,100 @@
+{
+    "timezone": "US/Central",
+    "trading_schedules": [
+        {
+            "day_of_week": "Saturday",
+            "trading_times": [
+                {
+                    "open": "12:00 AM",
+                    "close": "4:15 PM"
+                },
+                {
+                    "open": "4:16 PM",
+                    "close": "11:59 PM"
+                }
+            ]
+        },
+        {
+            "day_of_week": "Sunday",
+            "trading_times": [
+                {
+                    "open": "12:00 AM",
+                    "close": "4:15 PM"
+                },
+                {
+                    "open": "4:16 PM",
+                    "close": "11:59 PM"
+                }
+            ]
+        },
+        {
+            "day_of_week": "Monday",
+            "trading_times": [
+                {
+                    "open": "12:00 AM",
+                    "close": "4:15 PM"
+                },
+                {
+                    "open": "4:16 PM",
+                    "close": "11:59 PM"
+                }
+            ]
+        },
+        {
+            "day_of_week": "Tuesday",
+            "trading_times": [
+                {
+                    "open": "12:00 AM",
+                    "close": "4:15 PM"
+                },
+                {
+                    "open": "4:16 PM",
+                    "close": "11:59 PM"
+                }
+            ]
+        },
+        {
+            "day_of_week": "Wednesday",
+            "trading_times": [
+                {
+                    "open": "12:00 AM",
+                    "close": "2:00 AM"
+                },
+                {
+                    "open": "2:15 AM",
+                    "close": "4:15 PM"
+                },
+                {
+                    "open": "4:16 PM",
+                    "close": "11:59 PM"
+                }
+            ]
+        },
+        {
+            "day_of_week": "Thursday",
+            "trading_times": [
+                {
+                    "open": "12:00 AM",
+                    "close": "4:15 PM"
+                },
+                {
+                    "open": "4:16 PM",
+                    "close": "11:59 PM"
+                }
+            ]
+        },
+        {
+            "day_of_week": "Friday",
+            "trading_times": [
+                {
+                    "open": "12:00 AM",
+                    "close": "4:15 PM"
+                },
+                {
+                    "open": "4:16 PM",
+                    "close": "11:59 PM"
+                }
+            ]
+        }
+    ]
+}

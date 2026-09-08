@@ -1,0 +1,23 @@
+{
+    "asset_class": "OPT",
+    "description": "This race determines the outcome of the general election for Governor in Illinois, shaping state executive leadership.",
+    "market_name": "Illinois Governor General Election",
+    "measured_period": "Nov03'26",
+    "threshold": "JB Pritzker",
+    "source_agency": "Illinois State Board of Elections",
+    "data_and_resolution_link": "https://www.elections.il.gov/",
+    "last_trade_time": 1796414400,
+    "product_code": "MXXIL",
+    "market_rules_link": "https://forecastex-public-data.s3.amazonaws.com/regulatory/StateElectionTermsandConditions.pdf",
+    "release_time": 1796414400,
+    "payout_time": 1796421600,
+    "payout": "$1.00",
+    "price_increment": "$0.01",
+    "price_increments": [
+        {
+            "lower_edge": "0.0",
+            "increment": "$0.01"
+        }
+    ],
+    "exchange_timezone": "US/Central"
+}
