@@ -87,9 +87,10 @@ public class SessionClientTests
         Assert.True(validation.Result);
         Assert.Equal("user1234", validation.UserName);
 
-        // AUTH_TIME is epoch milliseconds; EXPIRES is a duration in milliseconds.
+        // AUTH_TIME is epoch milliseconds. EXPIRES is milliseconds remaining in this documented
+        // payload, but a live gateway sends an epoch timestamp for the same field.
         Assert.Equal(Instant.FromUnixTimeMilliseconds(1702580846836), validation.AuthenticatedAt);
-        Assert.Equal(Duration.FromMilliseconds(415890), validation.Expires);
+        Assert.Equal(Duration.FromMilliseconds(415890), validation.Expires?.Remaining);
         Assert.Equal(Instant.FromUnixTimeMilliseconds(1702581069652), validation.LastAccessed);
     }
 

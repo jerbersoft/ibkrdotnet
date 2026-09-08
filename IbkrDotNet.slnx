@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/samples/">
     <Project Path="samples/IbkrDotNet.Samples.Console/IbkrDotNet.Samples.Console.csproj" />
+    <Project Path="samples/IbkrDotNet.Samples.Verify/IbkrDotNet.Samples.Verify.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/IbkrDotNet.Extensions.DependencyInjection/IbkrDotNet.Extensions.DependencyInjection.csproj" />
