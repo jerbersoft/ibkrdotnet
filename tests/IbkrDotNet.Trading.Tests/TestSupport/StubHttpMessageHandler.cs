@@ -67,7 +67,11 @@ public sealed class StubHttpMessageHandler : HttpMessageHandler
             request.Method,
             request.RequestUri!,
             body,
-            request.Headers.ToDictionary(h => h.Key, h => string.Join(", ", h.Value), StringComparer.OrdinalIgnoreCase)));
+            request.Headers.ToDictionary(h => h.Key, h => string.Join(", ", h.Value), StringComparer.OrdinalIgnoreCase),
+            request.Content?.Headers.ToDictionary(
+                h => h.Key,
+                h => string.Join(", ", h.Value),
+                StringComparer.OrdinalIgnoreCase) ?? new Dictionary<string, string>()));
 
         if (_responders.Count > 0)
         {
@@ -86,7 +90,8 @@ public sealed class StubHttpMessageHandler : HttpMessageHandler
         HttpMethod Method,
         Uri Uri,
         string? Body,
-        IReadOnlyDictionary<string, string> Headers)
+        IReadOnlyDictionary<string, string> Headers,
+        IReadOnlyDictionary<string, string>? ContentHeaders = null)
     {
         public string Path => Uri.AbsolutePath;
 

@@ -60,6 +60,12 @@ IBKR offers three ways in. They differ only in how a request is credentialed; re
 
 Download and run IBKR's gateway, then log in at `https://localhost:5000`. The gateway holds the credentials and proxies authenticated requests, so nothing needs signing on this side. Its certificate is self-signed, so the first request fails on TLS until you trust it.
 
+If the gateway is on another port — macOS serves its AirPlay receiver on 5000, so moving it is common — set `BaseAddress` rather than `Environment`:
+
+```csharp
+options.BaseAddress = new Uri("https://localhost:5050");
+```
+
 ### OAuth 2.0
 
 ```csharp
@@ -131,6 +137,15 @@ dotnet test -c Release
 ```bash
 dotnet run --project samples/IbkrDotNet.Samples.Console
 ```
+
+Point it at a gateway on another port, and trust that gateway's self-signed certificate, with:
+
+```bash
+dotnet run --project samples/IbkrDotNet.Samples.Console -- \
+    --Ibkr:BaseAddress=https://localhost:5050 --TrustGatewayCertificate=true
+```
+
+`--TrustGatewayCertificate` relaxes certificate validation for loopback addresses only, so it cannot quietly disable it for a real IBKR host.
 
 ## License
 

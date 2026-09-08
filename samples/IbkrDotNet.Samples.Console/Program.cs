@@ -3,9 +3,16 @@
 //   1. Start the gateway and log in at https://localhost:5000
 //   2. dotnet run --project samples/IbkrDotNet.Samples.Console
 //
+// If the gateway is on another port (macOS uses 5000 for the AirPlay receiver, so moving it is
+// common), point the sample at it and trust its self-signed certificate:
+//
+//   dotnet run --project samples/IbkrDotNet.Samples.Console -- \
+//       --Ibkr:BaseAddress=https://localhost:5050 --TrustGatewayCertificate=true
+//
 // This sample never places a live order. The only order-related call it makes is a preview
 // (/orders/whatif), which asks IBKR what an order would do without submitting it.
 
+using System.Net.Security;
 using IbkrDotNet.Extensions.DependencyInjection;
 using IbkrDotNet.Trading;
 using IbkrDotNet.Trading.Configuration;
@@ -14,29 +21,43 @@ using IbkrDotNet.Trading.Models.MarketData;
 using IbkrDotNet.Trading.Models.Orders;
 using IbkrDotNet.Trading.Primitives;
 using IbkrDotNet.Trading.Time;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.Services
-    .AddIbkrTrading(options =>
-    {
-        options.Environment = IbkrEnvironment.ClientPortalGateway;
-        options.UserAgent = "ibkrdotnet-sample/0.1";
-    })
+    .AddIbkrTrading(builder.Configuration.GetSection(IbkrTradingOptions.SectionName))
     .UseClientPortalGateway();
+
+builder.Services.Configure<IbkrTradingOptions>(o => o.UserAgent = "ibkrdotnet-sample/0.1");
+
+// The gateway serves a self-signed certificate, which HttpClient rejects. Opting in relaxes
+// validation for loopback addresses only, so the flag cannot quietly disable it for a real host.
+if (builder.Configuration.GetValue("TrustGatewayCertificate", defaultValue: false))
+{
+    builder.Services
+        .AddHttpClient(IbkrApiClient.HttpClientName)
+        .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
+                errors == SslPolicyErrors.None || request.RequestUri?.IsLoopback is true,
+        });
+}
 
 using var host = builder.Build();
 var ibkr = host.Services.GetRequiredService<IIbkrTradingClient>();
+var gateway = host.Services.GetRequiredService<IOptions<IbkrTradingOptions>>().Value.ResolveBaseAddress();
 var cancellationToken = CancellationToken.None;
+
+Console.WriteLine($"Gateway: {gateway}");
 
 try
 {
-    // The gateway's certificate is self-signed, so a browser (and HttpClient) will object until it
-    // is trusted. If this first call fails on TLS, that is why.
     Console.WriteLine("Establishing the brokerage session...");
     var status = await ibkr.Session.EnsureBrokerageSessionAsync(cancellationToken);
 
@@ -46,7 +67,7 @@ try
 
     if (!status.IsReadyToTrade)
     {
-        Console.WriteLine("  The session is not ready. Log in at https://localhost:5000 and try again.");
+        Console.WriteLine($"  The session is not ready. Log in at {gateway} and try again.");
         return 1;
     }
 
@@ -135,7 +156,7 @@ try
 catch (IbkrAuthenticationException ex)
 {
     Console.Error.WriteLine($"Not authenticated: {ex.Message}");
-    Console.Error.WriteLine("Log in at https://localhost:5000 and try again.");
+    Console.Error.WriteLine($"Log in at {gateway} and try again.");
     return 1;
 }
 catch (IbkrApiException ex)
