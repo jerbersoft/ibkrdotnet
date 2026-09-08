@@ -123,7 +123,7 @@ public sealed record WatchlistDeletion
 /// <param name="Id">The identifier to create the watchlist under. Digits only, and unique.</param>
 /// <param name="Name">The display name.</param>
 /// <param name="Rows">One row per instrument.</param>
-public sealed record CreateWatchlistRequest(
+internal sealed record CreateWatchlistRequest(
     [property: JsonPropertyName("id")] string Id,
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("rows")] IReadOnlyList<CreateWatchlistRow> Rows);

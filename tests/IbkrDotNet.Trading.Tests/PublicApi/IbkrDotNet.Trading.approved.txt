@@ -1007,18 +1007,6 @@ namespace IbkrDotNet.Trading.Models.Contracts
         [System.Text.Json.Serialization.JsonPropertyName("canTradeAcctIds")]
         public System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Primitives.AccountId> TradableAccountIds { get; init; }
     }
-    public sealed class ContractRulesRequest : System.IEquatable<IbkrDotNet.Trading.Models.Contracts.ContractRulesRequest>
-    {
-        public ContractRulesRequest(long ConId, bool IsBuy = true, bool ModifyOrder = false, long? OrderId = default) { }
-        [System.Text.Json.Serialization.JsonPropertyName("conid")]
-        public long ConId { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("isBuy")]
-        public bool IsBuy { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("modifyOrder")]
-        public bool ModifyOrder { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("orderId")]
-        public long? OrderId { get; init; }
-    }
     public sealed class ContractSearchResult : System.IEquatable<IbkrDotNet.Trading.Models.Contracts.ContractSearchResult>
     {
         public ContractSearchResult() { }
@@ -2134,12 +2122,6 @@ namespace IbkrDotNet.Trading.Models.Orders
         Manual = 0,
         AutoConfirm = 1,
     }
-    public sealed class OrderReplyRequest : System.IEquatable<IbkrDotNet.Trading.Models.Orders.OrderReplyRequest>
-    {
-        public OrderReplyRequest(bool Confirmed) { }
-        [System.Text.Json.Serialization.JsonPropertyName("confirmed")]
-        public bool Confirmed { get; init; }
-    }
     public enum OrderSide
     {
         [System.Text.Json.Serialization.JsonStringEnumMemberName("BUY")]
@@ -2215,12 +2197,6 @@ namespace IbkrDotNet.Trading.Models.Orders
         public string? TimeInForce { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("total_size")]
         public decimal? TotalSize { get; init; }
-    }
-    public sealed class OrderSubmissionRequest : System.IEquatable<IbkrDotNet.Trading.Models.Orders.OrderSubmissionRequest>
-    {
-        public OrderSubmissionRequest(System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.Orders.OrderTicket> Orders) { }
-        [System.Text.Json.Serialization.JsonPropertyName("orders")]
-        public System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.Orders.OrderTicket> Orders { get; init; }
     }
     public abstract class OrderSubmissionResult : System.IEquatable<IbkrDotNet.Trading.Models.Orders.OrderSubmissionResult>
     {
@@ -2316,12 +2292,6 @@ namespace IbkrDotNet.Trading.Models.Orders
         public string RequestId { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("text")]
         public string Text { get; init; }
-    }
-    public sealed class SuppressMessagesRequest : System.IEquatable<IbkrDotNet.Trading.Models.Orders.SuppressMessagesRequest>
-    {
-        public SuppressMessagesRequest(System.Collections.Generic.IReadOnlyList<string> MessageIds) { }
-        [System.Text.Json.Serialization.JsonPropertyName("messageIds")]
-        public System.Collections.Generic.IReadOnlyList<string> MessageIds { get; init; }
     }
     public sealed class SuppressionStatus : System.IEquatable<IbkrDotNet.Trading.Models.Orders.SuppressionStatus>
     {
@@ -3050,18 +3020,6 @@ namespace IbkrDotNet.Trading.Models.Scanner
         [System.Text.Json.Serialization.JsonPropertyName("scan_type_list")]
         public System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.Scanner.ScannerType> ScanTypes { get; init; }
     }
-    public sealed class ScannerRequest : System.IEquatable<IbkrDotNet.Trading.Models.Scanner.ScannerRequest>
-    {
-        public ScannerRequest(string Instrument, string Type, string? Location, System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.Scanner.ScannerFilter> Filter) { }
-        [System.Text.Json.Serialization.JsonPropertyName("filter")]
-        public System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.Scanner.ScannerFilter> Filter { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("instrument")]
-        public string Instrument { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("location")]
-        public string? Location { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public string Type { get; init; }
-    }
     public sealed class ScannerResults : System.IEquatable<IbkrDotNet.Trading.Models.Scanner.ScannerResults>
     {
         public ScannerResults() { }
@@ -3125,14 +3083,6 @@ namespace IbkrDotNet.Trading.Models.Session
         public IServerStatus() { }
         [System.Text.Json.Serialization.JsonPropertyName("authStatus")]
         public IbkrDotNet.Trading.Models.Session.BrokerageSessionStatus? AuthStatus { get; init; }
-    }
-    public sealed class InitializeBrokerageSessionRequest : System.IEquatable<IbkrDotNet.Trading.Models.Session.InitializeBrokerageSessionRequest>
-    {
-        public InitializeBrokerageSessionRequest(bool Compete, bool Publish) { }
-        [System.Text.Json.Serialization.JsonPropertyName("compete")]
-        public bool Compete { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("publish")]
-        public bool Publish { get; init; }
     }
     public sealed class LogoutResponse : System.IEquatable<IbkrDotNet.Trading.Models.Session.LogoutResponse>
     {
@@ -3200,16 +3150,6 @@ namespace IbkrDotNet.Trading.Models.Session
 }
 namespace IbkrDotNet.Trading.Models.Watchlists
 {
-    public sealed class CreateWatchlistRequest : System.IEquatable<IbkrDotNet.Trading.Models.Watchlists.CreateWatchlistRequest>
-    {
-        public CreateWatchlistRequest(string Id, string Name, System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.Watchlists.CreateWatchlistRow> Rows) { }
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public string Id { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("name")]
-        public string Name { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("rows")]
-        public System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.Watchlists.CreateWatchlistRow> Rows { get; init; }
-    }
     public sealed class CreateWatchlistRow : System.IEquatable<IbkrDotNet.Trading.Models.Watchlists.CreateWatchlistRow>
     {
         public CreateWatchlistRow(string ConId) { }

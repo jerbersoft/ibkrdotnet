@@ -163,11 +163,11 @@ public enum OrderReplyPolicy
 
 /// <summary>The body of <c>POST /iserver/reply/{replyId}</c>.</summary>
 /// <param name="Confirmed">Whether to proceed with the order.</param>
-public sealed record OrderReplyRequest([property: JsonPropertyName("confirmed")] bool Confirmed);
+internal sealed record OrderReplyRequest([property: JsonPropertyName("confirmed")] bool Confirmed);
 
 /// <summary>The body of <c>POST /iserver/questions/suppress</c>.</summary>
 /// <param name="MessageIds">The message categories to suppress for the brokerage session.</param>
-public sealed record SuppressMessagesRequest(
+internal sealed record SuppressMessagesRequest(
     [property: JsonPropertyName("messageIds")] IReadOnlyList<string> MessageIds);
 
 /// <summary>The response from the order reply suppression endpoints.</summary>

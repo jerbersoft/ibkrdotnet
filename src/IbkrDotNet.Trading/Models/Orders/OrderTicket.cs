@@ -245,5 +245,5 @@ public sealed record AccountAllocation
 /// The order tickets. IBKR accepts one ticket per request unless the array forms a bracket or a
 /// one-cancels-all group.
 /// </param>
-public sealed record OrderSubmissionRequest(
+internal sealed record OrderSubmissionRequest(
     [property: JsonPropertyName("orders")] IReadOnlyList<OrderTicket> Orders);

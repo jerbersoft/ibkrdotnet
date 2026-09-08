@@ -100,6 +100,6 @@ public sealed record LogoutResponse
 /// Whether to publish the brokerage session token at initialization. IBKR documents <c>true</c> as
 /// the preferred value; otherwise the token must be published before calling this.
 /// </param>
-public sealed record InitializeBrokerageSessionRequest(
+internal sealed record InitializeBrokerageSessionRequest(
     [property: JsonPropertyName("compete")] bool Compete,
     [property: JsonPropertyName("publish")] bool Publish);

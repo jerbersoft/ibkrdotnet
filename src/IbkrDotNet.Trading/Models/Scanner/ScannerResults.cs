@@ -8,7 +8,7 @@ namespace IbkrDotNet.Trading.Models.Scanner;
 /// <param name="Type">The scan type, from <see cref="ScannerType.Code"/>.</param>
 /// <param name="Location">The location, from <see cref="ScannerLocation.Type"/>.</param>
 /// <param name="Filter">The filters to apply. IBKR names this single key for a list.</param>
-public sealed record ScannerRequest(
+internal sealed record ScannerRequest(
     [property: JsonPropertyName("instrument")] string Instrument,
     [property: JsonPropertyName("type")] string Type,
     [property: JsonPropertyName("location")] string? Location,
