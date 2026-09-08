@@ -1,0 +1,31 @@
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v10.0", FrameworkDisplayName=".NET 10.0")]
+namespace IbkrDotNet.Extensions.DependencyInjection
+{
+    public sealed class BrokerageSessionKeepAlive : Microsoft.Extensions.Hosting.BackgroundService
+    {
+        public BrokerageSessionKeepAlive(IbkrDotNet.Trading.Session.IIbkrSessionManager sessionManager, Microsoft.Extensions.Options.IOptions<IbkrDotNet.Extensions.DependencyInjection.BrokerageSessionKeepAliveOptions> options, Microsoft.Extensions.Logging.ILogger<IbkrDotNet.Extensions.DependencyInjection.BrokerageSessionKeepAlive> logger) { }
+        protected override System.Threading.Tasks.Task ExecuteAsync(System.Threading.CancellationToken stoppingToken) { }
+    }
+    public sealed class BrokerageSessionKeepAliveOptions
+    {
+        public BrokerageSessionKeepAliveOptions() { }
+        public bool EstablishSessionOnStart { get; set; }
+        public NodaTime.Duration Interval { get; set; }
+    }
+    public interface IIbkrTradingBuilder
+    {
+        Microsoft.Extensions.DependencyInjection.IServiceCollection Services { get; }
+    }
+    public static class IbkrTradingBuilderExtensions
+    {
+        public static IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder AddBrokerageSessionKeepAlive(this IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder builder, System.Action<IbkrDotNet.Extensions.DependencyInjection.BrokerageSessionKeepAliveOptions>? configure = null) { }
+        public static IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder UseClientPortalGateway(this IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder builder) { }
+        public static IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder UseOAuth1a(this IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder builder, System.Action<IbkrDotNet.Trading.Authentication.OAuth1a.OAuth1aOptions> configure) { }
+        public static IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder UseOAuth2(this IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder builder, System.Action<IbkrDotNet.Trading.Authentication.OAuth2.OAuth2Options> configure) { }
+    }
+    public static class IbkrTradingServiceCollectionExtensions
+    {
+        public static IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder AddIbkrTrading(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration) { }
+        public static IbkrDotNet.Extensions.DependencyInjection.IIbkrTradingBuilder AddIbkrTrading(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<IbkrDotNet.Trading.Configuration.IbkrTradingOptions>? configure = null) { }
+    }
+}

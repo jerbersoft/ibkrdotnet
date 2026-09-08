@@ -24,3 +24,6 @@ coverage/
 # OS
 .DS_Store
 Thumbs.db
+
+# A failing public API check writes the current surface beside its approved transcript.
+*.received.txt

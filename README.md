@@ -156,6 +156,8 @@ dotnet build IbkrDotNet.slnx -c Release
 dotnet test -c Release
 ```
 
+Both packages carry a transcript of their public surface under `tests/*/PublicApi/`, and a test fails when the assembly stops matching it. Both are published, so a signature that changes is somebody's compile error; nothing else in the suite would notice a widened parameter or a type that stopped being sealed. When a change is intended, the failure writes the new surface beside the approved one as `.received.txt` — read the diff, then replace the approved file with it.
+
 Response fixtures ending `.live.json` were captured from a running gateway rather than lifted from the documentation. They exist where the two disagree, so the discrepancy is pinned by a test instead of rediscovered.
 
 `tools/fetch-spec.sh` downloads IBKR's reference documentation as Markdown into a gitignored `artifacts/spec/`. IBKR serves a clean Markdown rendering of any docs page by appending `.md` to its URL, which makes it a reliable source when adding or verifying endpoint models. The response fixtures under `tests/IbkrDotNet.Trading.Tests/Fixtures/Responses/` are the example payloads from those pages, so deserialization is checked against what the API actually emits.
