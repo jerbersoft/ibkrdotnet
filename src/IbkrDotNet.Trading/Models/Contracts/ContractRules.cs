@@ -161,7 +161,7 @@ public sealed record ContractRules
 /// <param name="IsBuy">Which side of the market the rules apply to.</param>
 /// <param name="ModifyOrder">Whether the rules are for modifying an existing order.</param>
 /// <param name="OrderId">The order being modified, when <paramref name="ModifyOrder"/> is set.</param>
-public sealed record ContractRulesRequest(
+internal sealed record ContractRulesRequest(
     [property: JsonPropertyName("conid")] long ConId,
     [property: JsonPropertyName("isBuy")] bool IsBuy = true,
     [property: JsonPropertyName("modifyOrder")] bool ModifyOrder = false,
