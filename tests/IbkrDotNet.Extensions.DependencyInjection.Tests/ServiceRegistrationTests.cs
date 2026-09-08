@@ -42,6 +42,7 @@ public class ServiceRegistrationTests
     [InlineData(typeof(IMarketDataClient))]
     [InlineData(typeof(IWatchlistsClient))]
     [InlineData(typeof(IScannerClient))]
+    [InlineData(typeof(INotificationsClient))]
     [InlineData(typeof(IClock))]
     [InlineData(typeof(IDateTimeZoneProvider))]
     [InlineData(typeof(IbkrSessionState))]

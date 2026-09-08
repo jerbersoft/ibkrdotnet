@@ -44,6 +44,17 @@ public class ConverterTests
     }
 
     [Fact]
+    public void EpochSeconds_accepts_a_quoted_number_carrying_a_fractional_part()
+    {
+        // The FYI notification date is sent as "1710847062.0". The unquoted form has always been
+        // tolerated for the same reason; the quoted form had not been, and rejecting it failed the
+        // whole notification rather than one field.
+        var result = Read<EpochSeconds>("""{"timestamp":"1710847062.0"}""");
+
+        Assert.Equal(Instant.FromUnixTimeSeconds(1710847062), result.Value);
+    }
+
+    [Fact]
     public void EpochSeconds_round_trips_as_a_number()
     {
         var value = new EpochSeconds { Value = Instant.FromUnixTimeSeconds(1754948718) };
