@@ -8,4 +8,9 @@
     <ProjectReference Include="../../src/IbkrDotNet.Extensions.DependencyInjection/IbkrDotNet.Extensions.DependencyInjection.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="PublicApiGenerator" />
+    <Compile Include="../Shared/PublicApiApproval.cs" Link="TestSupport/PublicApiApproval.cs" />
+  </ItemGroup>
+
 </Project>
