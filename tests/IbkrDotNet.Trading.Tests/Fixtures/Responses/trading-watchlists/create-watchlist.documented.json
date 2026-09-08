@@ -1,0 +1,9 @@
+{
+  "id": "string",
+  "hash": "string",
+  "name": "string",
+  "readOnly": true,
+  "instruments": [
+    "string"
+  ]
+}

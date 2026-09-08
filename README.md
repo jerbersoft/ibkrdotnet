@@ -9,7 +9,7 @@ A .NET client for the [Interactive Brokers Web API](https://www.interactivebroke
 
 Targets `net10.0`. Every date and time value in the public API is a [NodaTime](https://nodatime.org) type — there is no `DateTime`, `DateTimeOffset` or `TimeSpan` anywhere in it.
 
-> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data — 59 of IBKR's 108 Trading endpoints) is implemented. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
+> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists — 63 of IBKR's 108 Trading endpoints — is implemented. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
 
 ## Getting started
 
@@ -154,7 +154,11 @@ dotnet run --project samples/IbkrDotNet.Samples.Verify -- \
     --Ibkr:BaseAddress=https://localhost:5050 --TrustGatewayCertificate=true
 ```
 
-Nothing is submitted by default. `--Orders=true` adds the order write path, which submits a limit order priced a quarter below the market so it rests rather than fills, modifies it, and cancels it in a `finally` block. That is refused on anything but a paper account, and there is deliberately no flag to override it. No credential is read or printed: the gateway holds the login, and the account identifier is discovered at runtime and masked on the way out, so the output can go straight into a bug report.
+No order is submitted by default. `--Orders=true` adds the order write path, which submits a limit order priced a quarter below the market so it rests rather than fills, modifies it, and cancels it in a `finally` block. That is refused on anything but a paper account, and there is deliberately no flag to override it.
+
+The watchlist checks do write without a flag, because a watchlist cannot move money. One is created under a fixed identifier, read back to confirm its contents, and deleted in a `finally` block; the identifier is checked against the existing lists first, so a watchlist the user created is never displaced.
+
+No credential is read or printed: the gateway holds the login, and the account identifier is discovered at runtime and masked on the way out, so the output can go straight into a bug report.
 
 ## License
 

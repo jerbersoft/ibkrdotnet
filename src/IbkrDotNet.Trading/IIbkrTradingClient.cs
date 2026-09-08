@@ -32,6 +32,9 @@ public interface IIbkrTradingClient
 
     /// <summary>The market data endpoints.</summary>
     IMarketDataClient MarketData { get; }
+
+    /// <summary>The watchlist endpoints.</summary>
+    IWatchlistsClient Watchlists { get; }
 }
 
 /// <inheritdoc cref="IIbkrTradingClient" />
@@ -45,6 +48,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
     /// <param name="contracts">The contracts client.</param>
     /// <param name="orders">The orders client.</param>
     /// <param name="marketData">The market data client.</param>
+    /// <param name="watchlists">The watchlists client.</param>
     public IbkrTradingClient(
         IIbkrSessionManager session,
         ISessionClient sessions,
@@ -52,7 +56,8 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         IPortfolioClient portfolio,
         IContractsClient contracts,
         IOrdersClient orders,
-        IMarketDataClient marketData)
+        IMarketDataClient marketData,
+        IWatchlistsClient watchlists)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(sessions);
@@ -61,6 +66,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         ArgumentNullException.ThrowIfNull(contracts);
         ArgumentNullException.ThrowIfNull(orders);
         ArgumentNullException.ThrowIfNull(marketData);
+        ArgumentNullException.ThrowIfNull(watchlists);
 
         Session = session;
         Sessions = sessions;
@@ -69,6 +75,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         Contracts = contracts;
         Orders = orders;
         MarketData = marketData;
+        Watchlists = watchlists;
     }
 
     /// <inheritdoc />
@@ -91,4 +98,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
 
     /// <inheritdoc />
     public IMarketDataClient MarketData { get; }
+
+    /// <inheritdoc />
+    public IWatchlistsClient Watchlists { get; }
 }
