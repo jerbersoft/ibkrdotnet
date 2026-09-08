@@ -1,0 +1,30 @@
+{
+  "market_name": "United States Carbon Dioxide Emissions",
+  "exchange": "FORECASTX",
+  "symbol": "USCE",
+  "logo_category": "g7369",
+  "exclude_historical_data": false,
+  "payout": 1,
+  "contracts": [
+    {
+      "conid": 732957192,
+      "side": "Y",
+      "expiration": "20260430",
+      "strike": 4700,
+      "strike_label": "Above 4,700",
+      "expiry_label": "2025",
+      "underlying_conid": 732764706,
+      "time_specifier": "2025.12.31"
+    },
+    {
+      "conid": 732957197,
+      "side": "N",
+      "expiration": "20260430",
+      "strike": 4700,
+      "strike_label": "Above 4,700",
+      "expiry_label": "2025",
+      "underlying_conid": 732764706,
+      "time_specifier": "2025.12.31"
+    }
+  ]
+}

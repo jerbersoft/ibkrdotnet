@@ -41,6 +41,9 @@ public interface IIbkrTradingClient
 
     /// <summary>The FYI and notification endpoints.</summary>
     INotificationsClient Notifications { get; }
+
+    /// <summary>The event contract endpoints.</summary>
+    IEventContractsClient EventContracts { get; }
 }
 
 /// <inheritdoc cref="IIbkrTradingClient" />
@@ -57,6 +60,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
     /// <param name="watchlists">The watchlists client.</param>
     /// <param name="scanner">The scanner client.</param>
     /// <param name="notifications">The notifications client.</param>
+    /// <param name="eventContracts">The event contract client.</param>
     public IbkrTradingClient(
         IIbkrSessionManager session,
         ISessionClient sessions,
@@ -67,7 +71,8 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         IMarketDataClient marketData,
         IWatchlistsClient watchlists,
         IScannerClient scanner,
-        INotificationsClient notifications)
+        INotificationsClient notifications,
+        IEventContractsClient eventContracts)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(sessions);
@@ -79,6 +84,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         ArgumentNullException.ThrowIfNull(watchlists);
         ArgumentNullException.ThrowIfNull(scanner);
         ArgumentNullException.ThrowIfNull(notifications);
+        ArgumentNullException.ThrowIfNull(eventContracts);
 
         Session = session;
         Sessions = sessions;
@@ -90,6 +96,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         Watchlists = watchlists;
         Scanner = scanner;
         Notifications = notifications;
+        EventContracts = eventContracts;
     }
 
     /// <inheritdoc />
@@ -121,4 +128,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
 
     /// <inheritdoc />
     public INotificationsClient Notifications { get; }
+
+    /// <inheritdoc />
+    public IEventContractsClient EventContracts { get; }
 }

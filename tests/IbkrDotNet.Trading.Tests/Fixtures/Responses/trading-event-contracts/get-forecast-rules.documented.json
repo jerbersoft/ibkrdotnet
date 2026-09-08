@@ -1,0 +1,17 @@
+{
+  "asset_class": "OPT",
+  "description": "Carbon Dioxide is an important greenhouse gas and thought to be one of the major contributors to anthropogenic climate change, a major societal challenge. US Carbon Dioxide emissions estimate the amount of Carbon Dioxide emitted in the United States in a calendar year.",
+  "market_name": "United States Carbon Dioxide Emissions",
+  "measured_period": "Dec31'35",
+  "threshold": "5050.0",
+  "source_agency": "Energy Information Agency",
+  "data_and_resolution_link": "https://www.eia.gov/environment/emissions/carbon/",
+  "last_trade_time": 2093202000,
+  "product_code": "USCE",
+  "market_rules_link": "https://data.forecastex.com/regulatory/USCETermsandConditions.pdf",
+  "release_time": 2093202000,
+  "payout_time": 2093277600,
+  "payout": "$1.00",
+  "price_increment": "$0.01",
+  "exchange_timezone": "US/Central"
+}

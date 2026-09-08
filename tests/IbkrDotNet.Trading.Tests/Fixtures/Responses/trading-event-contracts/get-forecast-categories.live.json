@@ -1,0 +1,29 @@
+{
+  "categories": {
+    "g137821": {
+      "name": "Elections",
+      "is_restricted": false,
+      "markets": []
+    },
+    "g137914": {
+      "name": "United States Gubernatorial",
+      "parent_id": "g137821",
+      "is_restricted": false
+    },
+    "g137940": {
+      "name": "Illinois",
+      "parent_id": "g137914",
+      "is_restricted": false,
+      "markets": [
+        {
+          "name": "Illinois Governor General Election",
+          "symbol": "MXXIL",
+          "exchange": "FORECASTX",
+          "is_restricted": false,
+          "conid": 848769488,
+          "product_conid": 848769493
+        }
+      ]
+    }
+  }
+}

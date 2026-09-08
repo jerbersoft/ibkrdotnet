@@ -43,4 +43,17 @@ public static class IbkrTimePatterns
     /// </summary>
     public static readonly LocalTimePattern HourMinute =
         LocalTimePattern.CreateWithInvariantCulture("HHmm");
+
+    /// <summary>
+    /// <c>h:mm tt</c> on a twelve-hour clock, such as <c>12:00 AM</c> or <c>4:15 PM</c>. Used by the
+    /// event contract trading schedule's <c>open</c> and <c>close</c>.
+    /// </summary>
+    /// <remarks>
+    /// The only twelve-hour format on the API. Every other wall-clock time IBKR sends is
+    /// <see cref="HourMinute"/>, so the two are kept apart rather than merged into one tolerant
+    /// pattern: a schedule that started reporting <c>0415</c> should fail loudly rather than be read
+    /// as a quarter past four in the morning.
+    /// </remarks>
+    public static readonly LocalTimePattern ClockTime =
+        LocalTimePattern.CreateWithInvariantCulture("h':'mm tt");
 }
