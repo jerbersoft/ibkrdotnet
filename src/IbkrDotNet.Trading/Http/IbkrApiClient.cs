@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
+using IbkrDotNet.Trading.Configuration;
+using IbkrDotNet.Trading.Http.RateLimiting;
 using IbkrDotNet.Trading.Serialization;
 using Microsoft.Extensions.Logging;
 using NodaTime;
@@ -10,6 +12,14 @@ namespace IbkrDotNet.Trading.Http;
 /// <summary>
 /// The default <see cref="IIbkrApiClient"/>, layered over a configured <see cref="HttpClient"/>.
 /// </summary>
+/// <remarks>
+/// Rate limiting is applied here rather than by a <see cref="DelegatingHandler"/> in the pipeline.
+/// <see cref="HttpClient.Timeout"/> covers the whole handler chain, so a wait taken inside it is
+/// charged to the caller's request budget: pacing a request for the default thirty-second
+/// <see cref="IbkrRateLimitingOptions.MaxWait"/> would exhaust the default thirty-second timeout and
+/// report a timeout for a request that was never sent. Waiting out here costs nothing, and the
+/// timeout goes back to measuring only what IBKR is responsible for.
+/// </remarks>
 public sealed class IbkrApiClient : IIbkrApiClient
 {
     /// <summary>The name used when resolving this client's <see cref="HttpClient"/> by name.</summary>
@@ -21,6 +31,7 @@ public sealed class IbkrApiClient : IIbkrApiClient
         new("application/json") { CharSet = "utf-8" };
 
     private readonly Func<HttpClient> _httpClientFactory;
+    private readonly IbkrRateLimiterRegistry? _rateLimiters;
     private readonly ILogger<IbkrApiClient> _logger;
 
     /// <summary>Creates the client over a single HTTP client.</summary>
@@ -32,10 +43,26 @@ public sealed class IbkrApiClient : IIbkrApiClient
     /// be rotated.
     /// </remarks>
     public IbkrApiClient(HttpClient httpClient, ILogger<IbkrApiClient> logger)
+        : this(httpClient, rateLimiters: null, logger)
+    {
+    }
+
+    /// <summary>Creates the client over a single HTTP client, pacing requests as it sends them.</summary>
+    /// <param name="httpClient">The configured HTTP client.</param>
+    /// <param name="rateLimiters">
+    /// The shared limiters, or <see langword="null"/> to send without pacing. Pass the singleton:
+    /// the windows are the state, and a per-call registry would start every one of them afresh.
+    /// </param>
+    /// <param name="logger">The logger.</param>
+    public IbkrApiClient(
+        HttpClient httpClient,
+        IbkrRateLimiterRegistry? rateLimiters,
+        ILogger<IbkrApiClient> logger)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
         _httpClientFactory = () => httpClient;
+        _rateLimiters = rateLimiters;
         _logger = logger;
     }
 
@@ -51,10 +78,29 @@ public sealed class IbkrApiClient : IIbkrApiClient
     /// client it returns is a thin wrapper over a pooled handler.
     /// </remarks>
     public IbkrApiClient(Func<HttpClient> httpClientFactory, ILogger<IbkrApiClient> logger)
+        : this(httpClientFactory, rateLimiters: null, logger)
+    {
+    }
+
+    /// <summary>
+    /// Creates the client over a factory that supplies an HTTP client per request, pacing requests
+    /// as it sends them. This is the constructor the dependency injection package uses.
+    /// </summary>
+    /// <param name="httpClientFactory">Supplies the HTTP client for each request.</param>
+    /// <param name="rateLimiters">
+    /// The shared limiters, or <see langword="null"/> to send without pacing. Pass the singleton:
+    /// the windows are the state, and a per-call registry would start every one of them afresh.
+    /// </param>
+    /// <param name="logger">The logger.</param>
+    public IbkrApiClient(
+        Func<HttpClient> httpClientFactory,
+        IbkrRateLimiterRegistry? rateLimiters,
+        ILogger<IbkrApiClient> logger)
     {
         ArgumentNullException.ThrowIfNull(httpClientFactory);
         ArgumentNullException.ThrowIfNull(logger);
         _httpClientFactory = httpClientFactory;
+        _rateLimiters = rateLimiters;
         _logger = logger;
     }
 
@@ -112,15 +158,15 @@ public sealed class IbkrApiClient : IIbkrApiClient
     }
 
     /// <inheritdoc />
-    public Task<HttpResponseMessage> SendRawAsync(
+    public async Task<HttpResponseMessage> SendRawAsync(
         IbkrRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        return _httpClientFactory().SendAsync(
-            BuildMessage(request),
-            HttpCompletionOption.ResponseHeadersRead,
-            cancellationToken);
+        await PaceAsync(request, cancellationToken).ConfigureAwait(false);
+        return await _httpClientFactory()
+            .SendAsync(BuildMessage(request), HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private async Task<HttpResponseMessage> SendAndEnsureSuccessAsync(
@@ -128,6 +174,8 @@ public sealed class IbkrApiClient : IIbkrApiClient
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
+
+        await PaceAsync(request, cancellationToken).ConfigureAwait(false);
 
         IbkrLog.SendingRequest(_logger, request.Method.Method, request.Path);
 
@@ -166,6 +214,18 @@ public sealed class IbkrApiClient : IIbkrApiClient
             throw CreateFailure(request, response, body);
         }
     }
+
+    /// <summary>
+    /// Waits for the limits that apply to a request, before the send that
+    /// <see cref="HttpClient.Timeout"/> is measuring begins.
+    /// </summary>
+    private Task PaceAsync(IbkrRequest request, CancellationToken cancellationToken) =>
+        _rateLimiters is null
+            ? Task.CompletedTask
+            : _rateLimiters.AcquireAsync(
+                request.Method,
+                new Uri(request.ToRelativeUri(), UriKind.Relative),
+                cancellationToken);
 
     private static HttpRequestMessage BuildMessage(IbkrRequest request)
     {

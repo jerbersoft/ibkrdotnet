@@ -164,4 +164,38 @@ public class RateLimitHandlerTests
         // Pacing is the handler's only job; interpreting a 429 belongs to IbkrApiClient.
         Assert.Equal(HttpStatusCode.TooManyRequests, response.StatusCode);
     }
+
+    [Fact]
+    public async Task Charges_its_wait_to_the_client_timeout_which_is_why_it_is_not_the_default()
+    {
+        // HttpClient.Timeout covers the whole handler chain, so a wait taken in here is spent out of
+        // the caller's request budget. This is the behaviour the handler's remarks warn about and the
+        // reason IbkrApiClient paces before the send instead; it is pinned so that the warning
+        // cannot quietly stop being true.
+        var options = new IbkrTradingOptions();
+        options.RateLimiting.AdditionalLimits.Add(
+            new IbkrRateLimit("/v1/api/probe/thing", "GET", 1, Duration.FromMilliseconds(600)));
+
+        using var registry = new IbkrRateLimiterRegistry(
+            options,
+            new SystemDelayScheduler(SystemClock.Instance));
+
+        using var stub = new StubHttpMessageHandler();
+        stub.AlwaysRespondWith(_ => new HttpResponseMessage(HttpStatusCode.OK));
+
+        using var client = new HttpClient(new IbkrRateLimitHandler(registry) { InnerHandler = stub })
+        {
+            BaseAddress = new Uri("https://localhost:5000"),
+            Timeout = TimeSpan.FromMilliseconds(250),
+        };
+
+        var uri = new Uri("/v1/api/probe/thing", UriKind.Relative);
+        await client.GetAsync(uri, TestContext.Current.CancellationToken);
+
+        // The second request never reaches the stub: the timeout fires while the handler is waiting.
+        await Assert.ThrowsAsync<TaskCanceledException>(
+            () => client.GetAsync(uri, TestContext.Current.CancellationToken));
+
+        Assert.Single(stub.Requests);
+    }
 }

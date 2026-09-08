@@ -66,6 +66,41 @@ public sealed class IbkrRateLimiterRegistry : IDisposable
 
     internal SlidingWindowLimiter? Global { get; }
 
+    /// <summary>
+    /// Waits until a request may be sent, taking a permit from every limit that applies to it.
+    /// </summary>
+    /// <remarks>
+    /// This must be awaited outside the scope of <see cref="HttpClient.Timeout"/>. That timeout
+    /// covers the whole handler chain, so pacing inside it spends the caller's budget on a wait this
+    /// library imposed: with the default thirty-second timeout and thirty-second
+    /// <see cref="IbkrRateLimitingOptions.MaxWait"/>, the longest permitted wait is the entire
+    /// budget, and the request fails as a timeout without a byte having been sent.
+    /// <see cref="IbkrApiClient"/> calls this before handing the request to
+    /// <see cref="HttpClient"/> for that reason.
+    /// </remarks>
+    /// <param name="method">The request method.</param>
+    /// <param name="requestUri">The request URI.</param>
+    /// <param name="cancellationToken">Cancels the wait.</param>
+    internal async Task AcquireAsync(HttpMethod method, Uri? requestUri, CancellationToken cancellationToken)
+    {
+        if (!Enabled)
+        {
+            return;
+        }
+
+        // The endpoint permit is taken first so that a request waiting on a tight per-endpoint
+        // limit does not also hold the global permit while it waits.
+        if (Find(method, requestUri) is { } endpointLimiter)
+        {
+            await endpointLimiter.AcquireAsync(MaxWait, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (Global is { } global)
+        {
+            await global.AcquireAsync(MaxWait, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
     /// <summary>Returns the per-endpoint limiter matching a request, when one applies.</summary>
     internal SlidingWindowLimiter? Find(HttpMethod method, Uri? requestUri)
     {

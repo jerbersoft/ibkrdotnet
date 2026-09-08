@@ -68,13 +68,13 @@ public static class IbkrTradingServiceCollectionExtensions
         services.TryAddSingleton<IIbkrAuthenticator>(ClientPortalGatewayAuthenticator.Instance);
 
         services.AddTransient<IbkrAuthenticationHandler>();
-        services.AddTransient<IbkrRateLimitHandler>();
 
         services
             .AddHttpClient(IbkrApiClient.HttpClientName, ConfigureHttpClient)
-            // Rate limiting runs outermost so a request waits before anything else touches it, and
-            // authentication runs closest to the wire so a signature is minted at send time.
-            .AddHttpMessageHandler<IbkrRateLimitHandler>()
+            // Authentication runs closest to the wire so a signature is minted at send time.
+            // Rate limiting is deliberately not a handler here: HttpClient.Timeout covers the whole
+            // chain, so a request paced inside it spends the caller's budget waiting and then fails
+            // as a timeout having never been sent. IbkrApiClient paces before the send instead.
             .AddHttpMessageHandler<IbkrAuthenticationHandler>();
 
         // The factory is passed in rather than a resolved client: a singleton holding one client
@@ -84,6 +84,7 @@ public static class IbkrTradingServiceCollectionExtensions
             var factory = provider.GetRequiredService<IHttpClientFactory>();
             return new IbkrApiClient(
                 () => factory.CreateClient(IbkrApiClient.HttpClientName),
+                provider.GetRequiredService<IbkrRateLimiterRegistry>(),
                 provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<IbkrApiClient>>());
         });
 
