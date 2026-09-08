@@ -1,0 +1,18 @@
+[
+  {
+    "ID": "2026090830712308",
+    "D": "1788866281.0",
+    "FC": "PF",
+    "MD": "<html>Some investors use analysts ratings to stay informed about their investments. Analysts have changed their ratings for one or more companies in which you hold positions.    <br />The following summary displays the affected companies, the current number of analysts by rating category and, in parentheses, the recent change in the number of analysts rating the company within each rating category.  <br /> - SOFI@NASDAQ: Buy: 4(0), Outperform: 6(+1), Hold: 12(0), Underperform: 3(0), Sell: 1(0). Held in: D****4567 <br /> <br />   Note: Current ratings are from Reuters and may not reflect all rating changes from other sources such as Street Insider and Briefing.</html>",
+    "MS": "FYI: Changes in Analyst Ratings",
+    "R": 0
+  },
+  {
+    "ID": "2026090725152749",
+    "D": "1788779680.0",
+    "FC": "PF",
+    "MD": "<html>Some investors use analysts ratings to stay informed about their investments. Analysts have changed their ratings for one or more companies in which you hold positions.    <br />The following summary displays the affected companies, the current number of analysts by rating category and, in parentheses, the recent change in the number of analysts rating the company within each rating category.  <br /> - AAPL@NASDAQ: Buy: 10(0), Outperform: 18(-1), Hold: 14(0), Underperform: 3(0), Sell: 1(0). Held in: D****4567 <br /> - CSCO@NASDAQ: Buy: 4(-1), Outperform: 14(0), Hold: 10(0), Underperform: 0(0), Sell: 0(0). Held in: D****4567 <br /> <br />   Note: Current ratings are from Reuters and may not reflect all rating changes from other sources such as Street Insider and Briefing.</html>",
+    "MS": "FYI: Changes in Analyst Ratings",
+    "R": 0
+  }
+]

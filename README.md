@@ -9,7 +9,7 @@ A .NET client for the [Interactive Brokers Web API](https://www.interactivebroke
 
 Targets `net10.0`. Every date and time value in the public API is a [NodaTime](https://nodatime.org) type — there is no `DateTime`, `DateTimeOffset` or `TimeSpan` anywhere in it.
 
-> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists and the market scanner — 65 of IBKR's 108 Trading endpoints — is implemented, and every one of them has been exercised against a live gateway, executions included. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
+> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists, the market scanner and FYIs & notifications — 76 of IBKR's 108 Trading endpoints — is implemented. All but seven have been exercised against a live gateway, executions included; the seven are the notification writes, which change settings on the username and cannot be undone through the API. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
 
 ## Getting started
 
@@ -116,6 +116,10 @@ The encryption and signing keys are different keys. Swapping them produces a liv
 
 **A number that does not apply comes back as an empty string.** A market order's `limit_price`, a filled order's `price` — IBKR sends `""` rather than `null` or nothing at all, and `"None"` and `"N/A"` appear in the same role elsewhere. Every nullable numeric property absorbs these as `null`, so one inapplicable field does not fail the whole response. A non-nullable one refuses instead of reading a plausible, wrong zero.
 
+**IBKR's list of notification type codes is not the list it sends.** The reference publishes twenty-three `typecode` values as a closed enum. A live gateway returns thirty categories from `/fyi/settings`, eleven of which — `OI`, `AA`, `BR`, `EH`, `NS`, `NP`, `PF`, `PC`, `SP`, `SL`, `TP` — are on no list anywhere, while four that are documented never appear. IBKR's *own* example response for that endpoint contains `PF`. So `NotificationTypeCode` is an open struct with the documented codes as static members, not an enum: an enum would turn every unlisted code into a failure of the whole response. The same group documents a notification's read flag as a string and sends a number, documents an `HT` field it never sends, and sends an `SS` field it never documented.
+
+**Two FYI endpoints answer a cold call by saying they are not ready.** `/fyi/unreadnumber` and `/fyi/notifications` return `503 Service Unavailable`, or `423 Locked` with the body `{"status":"waiting for reply"}`, while the gateway fetches from IBKR — then serve the data on a later call. Neither status is documented on either endpoint. The client does not retry for you: every endpoint in the group is limited to one request per second, and spending a caller's rate budget on a condition they cannot see is not a decision a library should make quietly. `IbkrApiException.StatusCode` carries the status, so the policy is yours.
+
 **Time is encoded inconsistently, which is why this library uses NodaTime.** The same API sends epoch seconds, epoch milliseconds, epoch milliseconds inside a JSON string, `YYYYMMDD-hh:mm:ss`, `YYMMDDhhmmss`, `yyyyMMdd` and `HHmm` — sometimes two encodings of one value on the same object. Each field declares the converter for its documented format, so `ledger.RetrievedAt` (seconds) and `trade.TradeTime` (milliseconds) both arrive as a correct `Instant`. Where IBKR sends the same moment twice — `trade_time` beside `trade_time_r`, `lastExecutionTime` beside `lastExecutionTime_r` — a real fill on a live gateway confirms the text halves are UTC and that both decodings land on the same instant. Trading schedules go further: opening and closing times are `LocalTime` values in the venue's own zone, reported as an IANA identifier, and `tradingScheduleDate` can mean "any Saturday" rather than a date — see `TradingScheduleDate`.
 
 ## Endpoints not yet modelled
@@ -165,6 +169,8 @@ No order is submitted by default. `--Orders=true` adds the order write path, whi
 `--Fills=true` goes further and lets an order execute: it buys one share at market, reads the execution back, and sells it again in a `finally` block, checking that the position returns to whatever the account started with rather than assuming it started flat. This is the only way to reach the four execution-time encodings, and it is worth reaching — the first run of it found that a market order's `limit_price` arrives as `""`, which failed the whole response. Unlike the rest of the sweep, these checks assert on the data: IBKR sends each execution time twice, and the two decodings disagreeing is a converter bug rather than a fact about the account.
 
 Both flags are refused on anything but a paper account, and there is deliberately no flag to override that.
+
+The notification checks read and never write, and there is no flag to make them write. Every other write path in the sweep undoes itself, but these change subscriptions and delivery settings on the username, and IBKR documents no way to read a value before overwriting it or to re-register a device once deleted. The seven writes are listed in the report as skips, each saying what it would have changed, so the group is visible in full rather than half-absent.
 
 The watchlist checks do write without a flag, because a watchlist cannot move money. One is created under a fixed identifier, read back to confirm its contents, and deleted in a `finally` block; the identifier is checked against the existing lists first, so a watchlist the user created is never displaced.
 

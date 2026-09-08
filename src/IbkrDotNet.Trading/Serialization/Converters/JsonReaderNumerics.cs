@@ -27,6 +27,14 @@ internal static class JsonReaderNumerics
                     return parsed;
                 }
 
+                // The same spurious fractional part the Number case tolerates, quoted: the FYI
+                // notification date arrives as "1710847062.0". Parsed as decimal rather than double
+                // so that an epoch in milliseconds keeps every digit.
+                if (decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var fractional))
+                {
+                    return checked((long)fractional);
+                }
+
                 throw IbkrSerializationException.ForValue(text, expectedFormat, targetType);
 
             default:

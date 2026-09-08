@@ -1,0 +1,16 @@
+[
+  {
+    "A": 1,
+    "FC": "PF",
+    "H": 0,
+    "FD": "Notify me of recent activity affecting my portfolio holdings.",
+    "FN": "Portfolio FYIs"
+  },
+  {
+    "A": 1,
+    "FC": "PT",
+    "H": 0,
+    "FD": "Notify me of potential account configuration changes needed and useful features based on my position transfers.",
+    "FN": "Position Transfer"
+  }
+]

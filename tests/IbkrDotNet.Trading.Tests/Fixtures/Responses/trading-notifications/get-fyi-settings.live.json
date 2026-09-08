@@ -1,0 +1,206 @@
+[
+  {
+    "FC": "M8",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me when I establish position subject to US dividend tax withholding 871(m) rules.",
+    "FN": "871(m) Trades"
+  },
+  {
+    "FC": "OI",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me when an AI Instruction is created.",
+    "FN": "AI Order Instructions"
+  },
+  {
+    "FC": "AA",
+    "H": 0,
+    "A": 1,
+    "FD": "Notifications related to account activity such as funding, application, trading and market data permission status",
+    "FN": "Account Activity"
+  },
+  {
+    "FC": "T2",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me if an option assignment or exercise results in delivery of US stock with long-term gains.",
+    "FN": "Assignment or Exercise Realizing Long-Term Gains"
+  },
+  {
+    "FC": "BA",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me when shares have been located on stocks that had previously been rejected for short sale orders created within the last three trading days.",
+    "FN": "Borrow Availability"
+  },
+  {
+    "FC": "BR",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me if there is a risk of an expensive stock borrow due to potential call assignments.",
+    "FN": "Borrow Risk from Call Assignment FYI"
+  },
+  {
+    "FC": "CA",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me if there is a comparable Algo or Order Type with lower fees",
+    "FN": "Comparable Algo"
+  },
+  {
+    "FC": "EH",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me of upcoming exchange holidays",
+    "FN": "Exchange Holidays"
+  },
+  {
+    "FC": "NS",
+    "H": 0
+  },
+  {
+    "FC": "NP",
+    "H": 0,
+    "A": 1,
+    "FD": "Send me new information that may be relevant to me.",
+    "FN": "Marketing Notification"
+  },
+  {
+    "FC": "TD",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me if the value of open position(s) in my account(s) depreciate by 10% or more.",
+    "FN": "MiFID II 10% Depreciation Notice"
+  },
+  {
+    "FC": "CB",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me if cost basis information is missing for my position transfers.",
+    "FN": "Missing Cost Basis"
+  },
+  {
+    "FC": "MF",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me if there is an ETF comparable to my Mutual Fund/ETF holdings.",
+    "FN": "Mutual Fund/ETF Advisory"
+  },
+  {
+    "FC": "DL",
+    "H": 0,
+    "FD": "Notify me if I lose money by failing to early exercise options or by exercising too early.",
+    "FN": "Option Exercise Loss Prevention Reminder"
+  },
+  {
+    "FC": "OE",
+    "H": 1,
+    "A": 1,
+    "FD": "Notify me three days before my options or futures expire.",
+    "FN": "Option or Future expiration"
+  },
+  {
+    "FC": "PS",
+    "H": 0,
+    "A": 1,
+    "FD": "Send me suggestions to better utilize the trading platform.",
+    "FN": "Platform Use Suggestions"
+  },
+  {
+    "FC": "PF",
+    "H": 1,
+    "A": 1,
+    "FD": "Notify me of recent activity affecting my portfolio holdings.",
+    "FN": "Portfolio FYIs"
+  },
+  {
+    "FC": "PT",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me of potential account configuration changes needed and useful features based on my position transfers.",
+    "FN": "Position Transfer"
+  },
+  {
+    "FC": "PC",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me when my orders are price capped or may be potentially price capped.",
+    "FN": "Price Cap FYI"
+  },
+  {
+    "FC": "SP",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me when SPACs (Special Purpose Acquisition Companies) are traded in my account.",
+    "FN": "SPAC FYI"
+  },
+  {
+    "FC": "SG",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me when the U.S. capital gains tax holding period on my profitable positions is about to change from short term to long term.",
+    "FN": "Short Term Gain turning Long Term"
+  },
+  {
+    "FC": "SL",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me when the U.S. capital gains tax holding period on my positions with unrealized losses is about to change from short term to long term.",
+    "FN": "Short Term Loss Becoming Long Term Loss"
+  },
+  {
+    "FC": "MS",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me on special milestones and occasions.",
+    "FN": "Special Occasions"
+  },
+  {
+    "FC": "TO",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me when a company in which I hold positions is part of a merger or takeover.",
+    "FN": "Takeover"
+  },
+  {
+    "FC": "TP",
+    "H": 0,
+    "A": 0,
+    "FD": "Notify me via push notifications when a part of my order executed, canceled or expired. This is for Live Trades only.",
+    "FN": "Trade Push Notifications"
+  },
+  {
+    "FC": "EA",
+    "H": 0,
+    "A": 1,
+    "FD": "Notify me of upcoming earnings announcements from any of my holdings.",
+    "FN": "Upcoming Earnings"
+  },
+  {
+    "FC": "DA",
+    "H": 0,
+    "SS": "TA_FYI",
+    "FD": "Notify me if my account holds call options whose underlying stock is scheduled to trade ex-dividend within the next two trading days.",
+    "FN": "Dividend-Triggered Option Exercise Advisory"
+  },
+  {
+    "FC": "SE",
+    "H": 0,
+    "SS": "TA_FYI",
+    "FD": "Upcoming events and times during which your orders will be suspended as specified by you.",
+    "FN": "Suspend Orders On Economic Event"
+  },
+  {
+    "FC": "SM",
+    "H": 0,
+    "FD": "System generated messages for your account(s)",
+    "FN": "System Messages"
+  },
+  {
+    "FC": "UA",
+    "H": 0,
+    "FD": "Notifications that you activated using the Mobile Trading Assistant",
+    "FN": "User Defined Alerts"
+  }
+]
