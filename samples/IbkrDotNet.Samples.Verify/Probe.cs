@@ -31,6 +31,11 @@ internal sealed class Probe(string accountId, string maskedAccountId)
             var summary = await check();
             Record(new Outcome(_group, endpoint, Status.Passed, summary));
         }
+        catch (SkipCheckException ex)
+        {
+            // A check that discovers mid-flight that it cannot run says so rather than failing.
+            Record(new Outcome(_group, endpoint, Status.Skipped, ex.Message));
+        }
         catch (Exception ex)
         {
             // Reported in full rather than truncated to a line. The `displayRule` schema mismatch
@@ -116,3 +121,9 @@ internal sealed class Probe(string accountId, string maskedAccountId)
 
     private sealed record Outcome(string Group, string Endpoint, Status Status, string Summary);
 }
+
+/// <summary>
+/// Thrown by a check that cannot run, to record a skip rather than a failure.
+/// </summary>
+/// <param name="reason">Why the check could not run.</param>
+internal sealed class SkipCheckException(string reason) : Exception(reason);

@@ -1,0 +1,84 @@
+{
+  "scan_type_list": [
+    {
+      "display_name": "Top % Gainers",
+      "code": "TOP_PERC_GAIN",
+      "instruments": [
+        "STK",
+        "ETF.EQ.US",
+        "ETF.FI.US",
+        "FUT.US",
+        "IND.US",
+        "STOCK.NA",
+        "FUT.NA",
+        "SSF.NA",
+        "STOCK.EU",
+        "FUT.EU",
+        "IND.EU",
+        "SSF.EU",
+        "STOCK.ME",
+        "STOCK.HK",
+        "FUT.HK",
+        "IND.HK",
+        "SSF.HK"
+      ]
+    }
+  ],
+  "instrument_list": [
+    {
+      "display_name": "US Stocks",
+      "type": "STK",
+      "filters": [
+        "afterHoursChange",
+        "afterHoursChangePerc",
+        "avgOptVolume"
+      ]
+    }
+  ],
+  "filter_list": [
+    {
+      "group": "afterHoursChangeAbove",
+      "display_name": "After-Hours Change Above",
+      "code": "afterHoursChangeAbove",
+      "type": "non-range"
+    },
+    {
+      "group": "haltedIs",
+      "display_name": "Halted",
+      "code": "haltedIs",
+      "combo_values": [
+        {
+          "vendor": null,
+          "default": true
+        },
+        {
+          "vendor": null,
+          "default": false
+        },
+        {
+          "vendor": null,
+          "default": false
+        }
+      ],
+      "type": "combo"
+    }
+  ],
+  "location_tree": [
+    {
+      "display_name": "US Stocks",
+      "type": "STK",
+      "locations": [
+        {
+          "display_name": "Listed/NASDAQ",
+          "type": "STK.US.MAJOR",
+          "locations": []
+        },
+        {
+          "display_name": "OTCMarkets",
+          "type": "STK.US.MINOR",
+          "locations": []
+        }
+      ]
+    }
+  ]
+}

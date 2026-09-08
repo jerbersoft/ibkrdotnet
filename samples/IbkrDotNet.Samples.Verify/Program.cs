@@ -94,6 +94,7 @@ Console.WriteLine($"Account: {Mask(account)}");
 var probe = new Probe(account.Value, Mask(account));
 var context = await ReadOnlyChecks.RunAsync(ibkr, probe, account, cancellationToken);
 await WatchlistChecks.RunAsync(ibkr, probe, context, cancellationToken);
+await ScannerChecks.RunAsync(ibkr, probe, cancellationToken);
 
 if (!writeOrders)
 {

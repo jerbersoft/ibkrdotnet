@@ -9,7 +9,7 @@ A .NET client for the [Interactive Brokers Web API](https://www.interactivebroke
 
 Targets `net10.0`. Every date and time value in the public API is a [NodaTime](https://nodatime.org) type — there is no `DateTime`, `DateTimeOffset` or `TimeSpan` anywhere in it.
 
-> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists — 63 of IBKR's 108 Trading endpoints — is implemented. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
+> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists and the market scanner — 65 of IBKR's 108 Trading endpoints — is implemented. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
 
 ## Getting started
 
@@ -112,6 +112,8 @@ The encryption and signing keys are different keys. Swapping them produces a liv
 
 **Rate limits are enforced client-side by default.** IBKR caps requests at 10/second per username and applies much tighter per-endpoint limits — `/iserver/scanner/params` allows one request per fifteen minutes. Exceeding them puts your IP in a ten-minute penalty box, and repeat violations can get it blocked, so the client paces requests rather than reacting to a `429`. Waits longer than `RateLimiting.MaxWait` (30 seconds) throw instead of blocking silently.
 
+**A market scanner selects contracts; it does not report the numbers it ranked them by.** Each row carries a `scan_data` field holding the ranked value, and IBKR's published example shows it on every row — but a live gateway omitted it from all fifty rows of a Top % Gainers scan, both pre-market and during regular trading hours, returning only the contracts and the column heading. Read quotes for the returned conids if the numbers matter. `/iserver/scanner/params` is separately awkward: it is 200 KB of reference data behind the tightest limit in the API, one request per fifteen minutes, so fetch it once and hold it. A `combo` filter's choices come back carrying nothing but which one is the default — no value, no label — so what to send for one has to be read out of Trader Workstation.
+
 **Time is encoded inconsistently, which is why this library uses NodaTime.** The same API sends epoch seconds, epoch milliseconds, epoch milliseconds inside a JSON string, `YYYYMMDD-hh:mm:ss`, `YYMMDDhhmmss`, `yyyyMMdd` and `HHmm` — sometimes two encodings of one value on the same object. Each field declares the converter for its documented format, so `ledger.RetrievedAt` (seconds) and `trade.TradeTime` (milliseconds) both arrive as a correct `Instant`. Trading schedules go further: opening and closing times are `LocalTime` values in the venue's own zone, reported as an IANA identifier, and `tradingScheduleDate` can mean "any Saturday" rather than a date — see `TradingScheduleDate`.
 
 ## Endpoints not yet modelled
@@ -129,6 +131,8 @@ var watchlists = await apiClient.SendAsync<JsonElement>(
 dotnet build IbkrDotNet.slnx -c Release
 dotnet test -c Release
 ```
+
+Response fixtures ending `.live.json` were captured from a running gateway rather than lifted from the documentation. They exist where the two disagree, so the discrepancy is pinned by a test instead of rediscovered.
 
 `tools/fetch-spec.sh` downloads IBKR's reference documentation as Markdown into a gitignored `artifacts/spec/`. IBKR serves a clean Markdown rendering of any docs page by appending `.md` to its URL, which makes it a reliable source when adding or verifying endpoint models. The response fixtures under `tests/IbkrDotNet.Trading.Tests/Fixtures/Responses/` are the example payloads from those pages, so deserialization is checked against what the API actually emits.
 
