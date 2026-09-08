@@ -1,0 +1,120 @@
+{
+  "id": "getAllocation",
+  "currency": "USD",
+  "realtime": true,
+  "allocations": {
+    "FINANCIAL_INSTRUMENT": {
+      "long": {
+        "total": {
+          "nav": 79933.252596,
+          "weight": 1.0
+        },
+        "items": [
+          {
+            "id": "STK",
+            "name": "Stocks",
+            "nav": 14469.086035999999,
+            "weight": 0.1810146,
+            "color": "#034da2"
+          },
+          {
+            "id": "CASH_BALANCE",
+            "name": "Cash",
+            "nav": 65464.166560000005,
+            "weight": 0.8189854,
+            "color": "#11ea77"
+          }
+        ]
+      }
+    },
+    "ASSET_CLASS": {
+      "long": {
+        "total": {
+          "nav": 79933.252596,
+          "weight": 1.0
+        },
+        "items": [
+          {
+            "id": "EQ",
+            "name": "Equities",
+            "nav": 14469.086035999999,
+            "weight": 0.1810146,
+            "color": "#d780ff"
+          },
+          {
+            "id": "CA",
+            "name": "Cash",
+            "nav": 65464.166560000005,
+            "weight": 0.8189854,
+            "color": "#11ea77"
+          }
+        ]
+      }
+    },
+    "COUNTRY": {
+      "long": {
+        "total": {
+          "nav": 79933.252592,
+          "weight": 1.0
+        },
+        "items": [
+          {
+            "id": "US",
+            "name": "United States",
+            "nav": 79933.252592,
+            "weight": 1.0,
+            "color": "#0070ba"
+          }
+        ]
+      }
+    },
+    "SECTOR": {
+      "long": {
+        "total": {
+          "nav": 79933.252592,
+          "weight": 1.0
+        },
+        "items": [
+          {
+            "id": "55",
+            "name": "Financials",
+            "nav": 398.288002,
+            "weight": 0.00498276,
+            "color": "#56c480"
+          },
+          {
+            "id": "57",
+            "name": "Technology",
+            "nav": 14070.798034,
+            "weight": 0.17603185,
+            "color": "#008fd5"
+          },
+          {
+            "id": "CA",
+            "name": "Cash",
+            "nav": 65464.166556000004,
+            "weight": 0.8189854,
+            "color": "#11ea77"
+          }
+        ]
+      }
+    },
+    "REGION": {
+      "long": {
+        "total": {
+          "nav": 79933.252592,
+          "weight": 1.0
+        },
+        "items": [
+          {
+            "id": "NORTHA",
+            "name": "North America",
+            "nav": 79933.252592,
+            "weight": 1.0,
+            "color": "#25a8ff"
+          }
+        ]
+      }
+    }
+  }
+}

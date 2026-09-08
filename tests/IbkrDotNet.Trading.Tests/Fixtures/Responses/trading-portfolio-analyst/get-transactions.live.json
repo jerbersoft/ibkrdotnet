@@ -1,0 +1,128 @@
+{
+  "nd": 366,
+  "rpnl": {
+    "data": [
+      {
+        "cur": "USD",
+        "date": "20260908",
+        "fxRate": 1.0,
+        "side": "L",
+        "positionSide": "long",
+        "acctid": "DU1234567",
+        "amt": "92.71267664",
+        "conid": "265598"
+      },
+      {
+        "cur": "USD",
+        "date": "20251105",
+        "fxRate": 1.0,
+        "side": "L",
+        "positionSide": "long",
+        "acctid": "DU1234567",
+        "amt": "20.8979",
+        "conid": "265598"
+      }
+    ],
+    "amt": "113.61057664"
+  },
+  "currency": "USD",
+  "from": 1757289600000,
+  "id": "getTransactions",
+  "to": 1788825600000,
+  "transactions": [
+    {
+      "cur": "USD",
+      "date": "Wed Nov 05 00:00:00 EST 2025",
+      "rawDate": "20251105",
+      "fxRate": 1.0,
+      "pr": 267.71,
+      "qty": 10.0,
+      "acctid": "DU1234567",
+      "amt": -2677.1,
+      "conid": 265598,
+      "type": "Buy",
+      "desc": "APPLE INC",
+      "isRealTime": false
+    },
+    {
+      "cur": "USD",
+      "date": "Wed Nov 05 00:00:00 EST 2025",
+      "rawDate": "20251105",
+      "fxRate": 1.0,
+      "pr": 270.0,
+      "qty": -10.0,
+      "acctid": "DU1234567",
+      "amt": 2700.0,
+      "conid": 265598,
+      "type": "Sell",
+      "desc": "APPLE INC",
+      "isRealTime": false
+    },
+    {
+      "cur": "USD",
+      "date": "Thu Feb 19 00:00:00 EST 2026",
+      "rawDate": "20260219",
+      "fxRate": 1.0,
+      "pr": 261.62,
+      "qty": 10.0,
+      "acctid": "DU1234567",
+      "amt": -2616.2,
+      "conid": 265598,
+      "type": "Buy",
+      "desc": "APPLE INC",
+      "isRealTime": false
+    },
+    {
+      "cur": "USD",
+      "date": "Tue May 12 00:00:00 EDT 2026",
+      "rawDate": "20260512",
+      "fxRate": 1.0,
+      "acctid": "DU1234567",
+      "amt": 2.7,
+      "conid": 265598,
+      "type": "Payment In Lieu",
+      "desc": "APPLE INC",
+      "isRealTime": false
+    },
+    {
+      "cur": "USD",
+      "date": "Tue Aug 11 00:00:00 EDT 2026",
+      "rawDate": "20260811",
+      "fxRate": 1.0,
+      "acctid": "DU1234567",
+      "amt": 2.7,
+      "conid": 265598,
+      "type": "Payment In Lieu",
+      "desc": "APPLE INC",
+      "isRealTime": false
+    },
+    {
+      "cur": "USD",
+      "date": "Tue Sep 08 00:00:00 EDT 2026",
+      "rawDate": "20260908",
+      "fxRate": 1.0,
+      "pr": 317.13,
+      "qty": 2.0,
+      "acctid": "DU1234567",
+      "amt": -634.26,
+      "conid": 265598,
+      "type": "Buy",
+      "desc": "APPLE INC",
+      "isRealTime": true
+    },
+    {
+      "cur": "USD",
+      "date": "Tue Sep 08 00:00:00 EDT 2026",
+      "rawDate": "20260908",
+      "fxRate": 1.0,
+      "pr": 316.56,
+      "qty": -2.0,
+      "acctid": "DU1234567",
+      "amt": 633.12,
+      "conid": 265598,
+      "type": "Sell",
+      "desc": "APPLE INC",
+      "isRealTime": true
+    }
+  ]
+}

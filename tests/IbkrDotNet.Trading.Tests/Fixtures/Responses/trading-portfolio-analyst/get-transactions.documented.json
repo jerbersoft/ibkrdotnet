@@ -1,0 +1,29 @@
+{
+  "rc": 0,
+  "nd": 4,
+  "rpnl": {
+    "data": [
+      "string"
+    ],
+    "amt": "12.2516"
+  },
+  "currency": "USD",
+  "from": 1702270800000,
+  "id": "getTransactions",
+  "to": 1702530000000,
+  "includesRealTime": true,
+  "transactions": [
+    {
+      "date": "Mon Dec 11 00:00:00 EST 2023",
+      "cur": "USD",
+      "fxRate": 1,
+      "pr": 1,
+      "qty": -5,
+      "acctid": "U1234567",
+      "amt": 1,
+      "conid": 265598,
+      "type": "Sell",
+      "desc": "Apple Inc"
+    }
+  ]
+}
