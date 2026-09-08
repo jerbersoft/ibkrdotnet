@@ -97,6 +97,7 @@ public static class IbkrTradingServiceCollectionExtensions
         services.TryAddSingleton<IScannerClient, ScannerClient>();
         services.TryAddSingleton<INotificationsClient, NotificationsClient>();
         services.TryAddSingleton<IEventContractsClient, EventContractsClient>();
+        services.TryAddSingleton<IAlertsClient, AlertsClient>();
         services.TryAddSingleton<IIbkrSessionManager, IbkrSessionManager>();
         services.TryAddSingleton<IIbkrTradingClient, IbkrTradingClient>();
 
