@@ -7,8 +7,12 @@
 //   dotnet run --project samples/IbkrDotNet.Samples.Verify -- \
 //       --Ibkr:BaseAddress=https://localhost:5050 --TrustGatewayCertificate=true
 //
-// By default nothing is submitted. Add --Orders=true to also exercise the order write path with a
+// By default no order is submitted. Add --Orders=true to also exercise the order write path with a
 // resting limit order that cannot fill; that requires a paper account and is refused on any other.
+//
+// The watchlist checks do write, because a watchlist cannot move money: one is created under a fixed
+// identifier, read back and deleted again, and the identifier is checked against the existing lists
+// first so nothing the user made is displaced.
 //
 // No credential is read, stored or printed here. The gateway holds the login and this talks to it
 // over loopback, so there is nothing to configure and nothing to leak. The account identifier is
@@ -89,6 +93,7 @@ Console.WriteLine($"Account: {Mask(account)}");
 
 var probe = new Probe(account.Value, Mask(account));
 var context = await ReadOnlyChecks.RunAsync(ibkr, probe, account, cancellationToken);
+await WatchlistChecks.RunAsync(ibkr, probe, context, cancellationToken);
 
 if (!writeOrders)
 {

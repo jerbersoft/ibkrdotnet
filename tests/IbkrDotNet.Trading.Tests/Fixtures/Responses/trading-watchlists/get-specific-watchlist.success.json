@@ -1,0 +1,18 @@
+{
+  "id": "1234",
+  "hash": "1234987651621",
+  "name": "Test Watchlist",
+  "readOnly": false,
+  "instruments": [
+    {
+      "ST": "STK",
+      "C": "8314",
+      "conid": 8314,
+      "name": "INTL BUSINESS MACHINES CORP",
+      "fullName": "IBM",
+      "assetClass": "STK",
+      "ticker": "IBM",
+      "chineseName": ""
+    }
+  ]
+}
