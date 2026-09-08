@@ -1,0 +1,30 @@
+{
+  "contracts": [
+    {
+      "server_id": "0",
+      "column_name": "Trades",
+      "symbol": "TSLA",
+      "conidex": "76792991",
+      "con_id": 76792991,
+      "available_chart_periods": "#R|1",
+      "company_name": "TESLA INC",
+      "contract_description_1": "TSLA",
+      "listing_exchange": "NASDAQ.NMS",
+      "sec_type": "STK",
+      "scan_data": "221.521K"
+    },
+    {
+      "server_id": "1",
+      "symbol": "SPY",
+      "conidex": "756733",
+      "con_id": 756733,
+      "available_chart_periods": "#R|1",
+      "company_name": "SPDR S&P 500 ETF TRUST",
+      "contract_description_1": "SPY",
+      "listing_exchange": "ARCA",
+      "sec_type": "STK",
+      "scan_data": "123.661K"
+    }
+  ],
+  "scan_data_column_name": "Trades"
+}

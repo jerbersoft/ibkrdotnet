@@ -1,0 +1,39 @@
+{
+  "contracts": [
+    {
+      "server_id": "0",
+      "column_name": "Chg%",
+      "symbol": "PDSB",
+      "conidex": "357194949",
+      "con_id": 357194949,
+      "available_chart_periods": "#R|1",
+      "company_name": "PDS BIOTECHNOLOGY CORP",
+      "contract_description_1": "PDSB",
+      "listing_exchange": "NASDAQ.SCM",
+      "sec_type": "STK"
+    },
+    {
+      "server_id": "1",
+      "symbol": "RIV RT",
+      "conidex": "912229840",
+      "con_id": 912229840,
+      "available_chart_periods": "#R|1",
+      "company_name": "RIVERNORTH OPPOR FUND-RT-WI",
+      "contract_description_1": "RIV RT",
+      "listing_exchange": "NYSE",
+      "sec_type": "STK"
+    },
+    {
+      "server_id": "2",
+      "symbol": "BNC",
+      "conidex": "708058620",
+      "con_id": 708058620,
+      "available_chart_periods": "#R|1",
+      "company_name": "CEA INDUSTRIES INC",
+      "contract_description_1": "BNC",
+      "listing_exchange": "NASDAQ.SCM",
+      "sec_type": "STK"
+    }
+  ],
+  "scan_data_column_name": "Chg%"
+}

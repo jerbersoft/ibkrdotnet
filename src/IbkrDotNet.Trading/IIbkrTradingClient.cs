@@ -35,6 +35,9 @@ public interface IIbkrTradingClient
 
     /// <summary>The watchlist endpoints.</summary>
     IWatchlistsClient Watchlists { get; }
+
+    /// <summary>The market scanner endpoints.</summary>
+    IScannerClient Scanner { get; }
 }
 
 /// <inheritdoc cref="IIbkrTradingClient" />
@@ -49,6 +52,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
     /// <param name="orders">The orders client.</param>
     /// <param name="marketData">The market data client.</param>
     /// <param name="watchlists">The watchlists client.</param>
+    /// <param name="scanner">The scanner client.</param>
     public IbkrTradingClient(
         IIbkrSessionManager session,
         ISessionClient sessions,
@@ -57,7 +61,8 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         IContractsClient contracts,
         IOrdersClient orders,
         IMarketDataClient marketData,
-        IWatchlistsClient watchlists)
+        IWatchlistsClient watchlists,
+        IScannerClient scanner)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(sessions);
@@ -67,6 +72,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         ArgumentNullException.ThrowIfNull(orders);
         ArgumentNullException.ThrowIfNull(marketData);
         ArgumentNullException.ThrowIfNull(watchlists);
+        ArgumentNullException.ThrowIfNull(scanner);
 
         Session = session;
         Sessions = sessions;
@@ -76,6 +82,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         Orders = orders;
         MarketData = marketData;
         Watchlists = watchlists;
+        Scanner = scanner;
     }
 
     /// <inheritdoc />
@@ -101,4 +108,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
 
     /// <inheritdoc />
     public IWatchlistsClient Watchlists { get; }
+
+    /// <inheritdoc />
+    public IScannerClient Scanner { get; }
 }
