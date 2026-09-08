@@ -1,0 +1,20 @@
+# The top navigation bar.
+#
+# Guides first, reference second. A reader who lands here needs to be taught the library before they
+# need a member list -- and the README, linked as Reference, is where the measured IBKR behaviour is
+# written down, so it earns a place in the nav rather than only being a file on GitHub.
+#
+# href points at the folder so the generated toc.yml in it becomes the sidebar; topicHref is what the
+# nav link opens. Without topicHref an entry lands on whichever page happens to sort first, and the
+# hand-written index is built but unreachable.
+
+- name: Guides
+  href: guides/
+  topicHref: guides/getting-started.md
+- name: Reference
+  href: ../README.md
+- name: API reference
+  href: api/
+  topicHref: api/index.md
+- name: GitHub
+  href: https://github.com/jerbersoft/ibkrdotnet

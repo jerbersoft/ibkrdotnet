@@ -11,6 +11,7 @@
   <ItemGroup>
     <PackageReference Include="PublicApiGenerator" />
     <Compile Include="../Shared/PublicApiApproval.cs" Link="TestSupport/PublicApiApproval.cs" />
+    <Compile Include="../Shared/RepositoryLayout.cs" Link="TestSupport/RepositoryLayout.cs" />
   </ItemGroup>
 
 </Project>
