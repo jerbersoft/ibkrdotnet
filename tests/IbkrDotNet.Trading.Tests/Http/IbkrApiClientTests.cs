@@ -53,6 +53,25 @@ public class IbkrApiClientTests
     }
 
     [Fact]
+    public async Task Sends_a_json_body_with_a_content_length()
+    {
+        // IBKR sits behind an edge that answers a chunked request with 411 Length Required, so a
+        // body must be measured before it is sent rather than streamed.
+        var (client, stub) = Build();
+        stub.RespondWithJson("{}");
+
+        await client.SendAsync(
+            IbkrRequest.Post("/v1/api/iserver/account/DU1234567/orders/whatif")
+                .WithJsonBody(new { orders = new[] { new { conid = 265598, side = "BUY" } } }),
+            TestContext.Current.CancellationToken);
+
+        var contentHeaders = stub.LastRequest.ContentHeaders!;
+        Assert.True(contentHeaders.ContainsKey("Content-Length"));
+        Assert.Equal("application/json; charset=utf-8", contentHeaders["Content-Type"]);
+        Assert.False(stub.LastRequest.Headers.ContainsKey("Transfer-Encoding"));
+    }
+
+    [Fact]
     public async Task Maps_a_401_to_an_authentication_failure()
     {
         var (client, stub) = Build();

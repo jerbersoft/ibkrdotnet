@@ -1,5 +1,5 @@
 using System.Net;
-using System.Net.Http.Json;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using IbkrDotNet.Trading.Serialization;
 using Microsoft.Extensions.Logging;
@@ -16,6 +16,9 @@ public sealed class IbkrApiClient : IIbkrApiClient
     public const string HttpClientName = "IbkrDotNet.Trading";
 
     private const int MaxLoggedBodyLength = 2048;
+
+    private static readonly MediaTypeHeaderValue JsonMediaType =
+        new("application/json") { CharSet = "utf-8" };
 
     private readonly Func<HttpClient> _httpClientFactory;
     private readonly ILogger<IbkrApiClient> _logger;
@@ -169,7 +172,13 @@ public sealed class IbkrApiClient : IIbkrApiClient
         var message = new HttpRequestMessage(request.Method, request.ToRelativeUri());
         if (request.Body is not null)
         {
-            message.Content = JsonContent.Create(request.Body, request.Body.GetType(), options: IbkrJson.Options);
+            // Serialized up front, rather than handed to JsonContent, so that the request carries a
+            // Content-Length. JsonContent cannot report its length, so HttpClient falls back to
+            // chunked transfer encoding, and the edge in front of IBKR answers a chunked request
+            // with 411 Length Required before it ever reaches the API.
+            var json = JsonSerializer.SerializeToUtf8Bytes(request.Body, request.Body.GetType(), IbkrJson.Options);
+            message.Content = new ByteArrayContent(json);
+            message.Content.Headers.ContentType = JsonMediaType;
         }
 
         return message;
