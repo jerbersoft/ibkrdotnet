@@ -59,8 +59,12 @@ public static class IbkrRateLimits
         new($"{Prefix}/portfolio/accounts", "GET", 1, Duration.FromSeconds(5)),
         new($"{Prefix}/portfolio/subaccounts", "GET", 1, Duration.FromSeconds(5)),
 
-        // PortfolioAnalyst.
+        // PortfolioAnalyst. IBKR's published limits table names /pa/summary, which is not an
+        // endpoint it documents anywhere; /pa/allperiods, which is, is absent from that table. It is
+        // paced with its neighbours rather than left to the global limit, because being wrong in the
+        // other direction costs an IP a ten-minute penalty box.
         new($"{Prefix}/pa/performance", "POST", 1, Duration.FromMinutes(15)),
+        new($"{Prefix}/pa/allperiods", "POST", 1, Duration.FromMinutes(15)),
         new($"{Prefix}/pa/summary", "POST", 1, Duration.FromMinutes(15)),
         new($"{Prefix}/pa/transactions", "POST", 1, Duration.FromMinutes(15)),
         new($"{Prefix}/pa/allocation", "POST", 1, Duration.FromMinutes(15)),

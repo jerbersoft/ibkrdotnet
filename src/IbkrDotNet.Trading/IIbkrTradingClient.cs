@@ -47,6 +47,9 @@ public interface IIbkrTradingClient
 
     /// <summary>The alert endpoints.</summary>
     IAlertsClient Alerts { get; }
+
+    /// <summary>The PortfolioAnalyst endpoints.</summary>
+    IPortfolioAnalystClient PortfolioAnalyst { get; }
 }
 
 /// <inheritdoc cref="IIbkrTradingClient" />
@@ -65,6 +68,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
     /// <param name="notifications">The notifications client.</param>
     /// <param name="eventContracts">The event contract client.</param>
     /// <param name="alerts">The alerts client.</param>
+    /// <param name="portfolioAnalyst">The PortfolioAnalyst client.</param>
     public IbkrTradingClient(
         IIbkrSessionManager session,
         ISessionClient sessions,
@@ -77,7 +81,8 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         IScannerClient scanner,
         INotificationsClient notifications,
         IEventContractsClient eventContracts,
-        IAlertsClient alerts)
+        IAlertsClient alerts,
+        IPortfolioAnalystClient portfolioAnalyst)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(sessions);
@@ -91,6 +96,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         ArgumentNullException.ThrowIfNull(notifications);
         ArgumentNullException.ThrowIfNull(eventContracts);
         ArgumentNullException.ThrowIfNull(alerts);
+        ArgumentNullException.ThrowIfNull(portfolioAnalyst);
 
         Session = session;
         Sessions = sessions;
@@ -104,6 +110,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         Notifications = notifications;
         EventContracts = eventContracts;
         Alerts = alerts;
+        PortfolioAnalyst = portfolioAnalyst;
     }
 
     /// <inheritdoc />
@@ -141,4 +148,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
 
     /// <inheritdoc />
     public IAlertsClient Alerts { get; }
+
+    /// <inheritdoc />
+    public IPortfolioAnalystClient PortfolioAnalyst { get; }
 }

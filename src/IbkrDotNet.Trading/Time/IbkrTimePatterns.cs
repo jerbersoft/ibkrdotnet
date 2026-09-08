@@ -56,4 +56,17 @@ public static class IbkrTimePatterns
     /// </remarks>
     public static readonly LocalTimePattern ClockTime =
         LocalTimePattern.CreateWithInvariantCulture("h':'mm tt");
+
+    /// <summary>
+    /// <c>yyyy-MM-dd HH:mm:ss</c>, always UTC. Used by the PortfolioAnalyst all-periods
+    /// <c>lastSuccessfulUpdate</c>.
+    /// </summary>
+    /// <remarks>
+    /// ISO 8601 but for the space where the <c>T</c> belongs, and the only place on the API where
+    /// IBKR punctuates a date at all. Kept separate from <see cref="UtcDateTime"/> for the reason
+    /// <see cref="ClockTime"/> is kept separate from <see cref="HourMinute"/>: one endpoint's
+    /// encoding should not become a tolerance every other endpoint inherits.
+    /// </remarks>
+    public static readonly LocalDateTimePattern SpacedDateTime =
+        LocalDateTimePattern.CreateWithInvariantCulture("uuuu'-'MM'-'dd HH':'mm':'ss");
 }
