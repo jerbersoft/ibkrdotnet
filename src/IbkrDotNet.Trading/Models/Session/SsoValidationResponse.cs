@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using IbkrDotNet.Trading.Serialization.Converters;
+using IbkrDotNet.Trading.Time;
 using NodaTime;
 
 namespace IbkrDotNet.Trading.Models.Session;
@@ -32,10 +33,16 @@ public sealed record SsoValidationResponse
     [JsonConverter(typeof(InstantEpochMillisecondsConverter))]
     public Instant? AuthenticatedAt { get; init; }
 
-    /// <summary>How long until the SSO session expires.</summary>
+    /// <summary>
+    /// When the SSO session expires.
+    /// </summary>
+    /// <remarks>
+    /// Not a plain <see cref="Duration"/>: IBKR documents this as milliseconds remaining but a live
+    /// Client Portal Gateway sends an epoch-millisecond timestamp. See <see cref="SsoExpiry"/>.
+    /// </remarks>
     [JsonPropertyName("EXPIRES")]
-    [JsonConverter(typeof(DurationMillisecondsConverter))]
-    public Duration? Expires { get; init; }
+    [JsonConverter(typeof(SsoExpiryConverter))]
+    public SsoExpiry? Expires { get; init; }
 
     /// <summary>When the user was last active.</summary>
     [JsonPropertyName("lastAccessed")]

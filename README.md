@@ -147,6 +147,15 @@ dotnet run --project samples/IbkrDotNet.Samples.Console -- \
 
 `--TrustGatewayCertificate` relaxes certificate validation for loopback addresses only, so it cannot quietly disable it for a real IBKR host.
 
+`samples/IbkrDotNet.Samples.Verify` sweeps every implemented endpoint against a running gateway and prints one line per endpoint. It exists because the unit tests cannot see the two kinds of bug that matter most here: a transport problem that only an intermediary produces, and a response whose real shape contradicts the documented example the fixtures were built from.
+
+```bash
+dotnet run --project samples/IbkrDotNet.Samples.Verify -- \
+    --Ibkr:BaseAddress=https://localhost:5050 --TrustGatewayCertificate=true
+```
+
+Nothing is submitted by default. `--Orders=true` adds the order write path, which submits a limit order priced a quarter below the market so it rests rather than fills, modifies it, and cancels it in a `finally` block. That is refused on anything but a paper account, and there is deliberately no flag to override it. No credential is read or printed: the gateway holds the login, and the account identifier is discovered at runtime and masked on the way out, so the output can go straight into a bug report.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
