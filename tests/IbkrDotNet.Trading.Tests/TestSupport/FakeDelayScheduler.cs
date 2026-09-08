@@ -10,6 +10,7 @@ namespace IbkrDotNet.Trading.Tests.TestSupport;
 public sealed class FakeDelayScheduler : IDelayScheduler
 {
     private readonly List<Duration> _delays = [];
+    private Action<Duration>? _onDelay;
 
     public FakeDelayScheduler(Instant? start = null)
     {
@@ -22,9 +23,16 @@ public sealed class FakeDelayScheduler : IDelayScheduler
 
     public Duration TotalDelay => _delays.Aggregate(Duration.Zero, (sum, d) => sum + d);
 
+    /// <summary>
+    /// Runs a callback at the moment each wait begins, before the clock moves, so a test can stage
+    /// something that happens while a caller is waiting.
+    /// </summary>
+    public void OnDelay(Action<Duration> onDelay) => _onDelay = onDelay;
+
     public Task DelayAsync(Duration duration, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        _onDelay?.Invoke(duration);
         _delays.Add(duration);
         Now += duration;
         return Task.CompletedTask;

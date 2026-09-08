@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using IbkrDotNet.Trading.Configuration;
 using Microsoft.Extensions.Options;
 using NodaTime;
@@ -17,6 +18,8 @@ namespace IbkrDotNet.Trading.Http.RateLimiting;
 public sealed class IbkrRateLimiterRegistry : IDisposable
 {
     private readonly List<(PathTemplate Template, string? Method, SlidingWindowLimiter Limiter)> _endpointLimiters;
+    private readonly IDelayScheduler _scheduler;
+    private readonly ServerBackoff _backoff;
     private bool _disposed;
 
     /// <summary>Creates the registry from configured options.</summary>
@@ -36,6 +39,9 @@ public sealed class IbkrRateLimiterRegistry : IDisposable
         var limiting = options.RateLimiting;
         Enabled = limiting.Enabled;
         MaxWait = limiting.MaxWait;
+        DefaultRetryAfter = limiting.DefaultRetryAfter;
+        _scheduler = scheduler;
+        _backoff = new ServerBackoff(scheduler);
 
         Global = limiting.EnforceGlobalLimit
             ? new SlidingWindowLimiter(
@@ -64,6 +70,9 @@ public sealed class IbkrRateLimiterRegistry : IDisposable
     /// <summary>The longest a request will wait before the limit is reported as exceeded.</summary>
     public Duration MaxWait { get; }
 
+    /// <summary>The hold applied to a rejection IBKR sent no <c>Retry-After</c> with.</summary>
+    public Duration DefaultRetryAfter { get; }
+
     internal SlidingWindowLimiter? Global { get; }
 
     /// <summary>
@@ -88,9 +97,18 @@ public sealed class IbkrRateLimiterRegistry : IDisposable
             return;
         }
 
-        // The endpoint permit is taken first so that a request waiting on a tight per-endpoint
+        var endpointLimiter = Find(method, requestUri);
+
+        // A rejection IBKR has already sent outranks whatever this library believes the limit to be,
+        // so it is waited out first -- and before any permit is taken, so that a permit is not spent
+        // sitting in a hold and then counted against a window it never used.
+        await _backoff
+            .WaitAsync(BackoffKey(method, requestUri, endpointLimiter), MaxWait, cancellationToken)
+            .ConfigureAwait(false);
+
+        // The endpoint permit is taken next so that a request waiting on a tight per-endpoint
         // limit does not also hold the global permit while it waits.
-        if (Find(method, requestUri) is { } endpointLimiter)
+        if (endpointLimiter is not null)
         {
             await endpointLimiter.AcquireAsync(MaxWait, cancellationToken).ConfigureAwait(false);
         }
@@ -101,6 +119,48 @@ public sealed class IbkrRateLimiterRegistry : IDisposable
         }
     }
 
+    /// <summary>
+    /// Records that IBKR answered a request with <c>429 Too Many Requests</c>, holding further
+    /// requests to the same limit until the window it asked for has elapsed.
+    /// </summary>
+    /// <param name="method">The rejected request's method.</param>
+    /// <param name="requestUri">The rejected request's URI.</param>
+    /// <param name="retryAfter">The <c>Retry-After</c> header, when IBKR sent one.</param>
+    /// <returns>
+    /// How long requests are now held for, or <see langword="null"/> when nothing was held because
+    /// pacing is disabled.
+    /// </returns>
+    /// <remarks>
+    /// <para>
+    /// The hold is attributed to the limit that paced the request, or to the exact path when no
+    /// limit matched. It is not applied globally: a <c>429</c> from one endpoint is usually that
+    /// endpoint's own limit, and stalling every other call in the process on it would turn one
+    /// rejected request into an outage. The cost of that choice is that an address IBKR has put in
+    /// its ten-minute penalty box shows up as a rejection per path rather than a single stall.
+    /// </para>
+    /// <para>
+    /// IBKR does not document sending <c>Retry-After</c> at all, so the window usually has to be
+    /// assumed: the matched limit's own window when there is one, on the grounds that it is the
+    /// figure this library already believed, and <see cref="DefaultRetryAfter"/> otherwise.
+    /// </para>
+    /// </remarks>
+    internal Duration? Penalize(HttpMethod method, Uri? requestUri, RetryConditionHeaderValue? retryAfter)
+    {
+        ArgumentNullException.ThrowIfNull(method);
+
+        if (!Enabled)
+        {
+            // Turning pacing off turns the feedback off with it. The caller is still told what IBKR
+            // asked for -- IbkrApiClient reads the header for the exception -- but nothing is held
+            // on their behalf, and saying otherwise would be a lie about what happens next.
+            return null;
+        }
+
+        var endpointLimiter = Find(method, requestUri);
+        var backoff = ResolveRetryAfter(retryAfter) ?? endpointLimiter?.Window ?? DefaultRetryAfter;
+        return _backoff.Record(BackoffKey(method, requestUri, endpointLimiter), backoff);
+    }
+
     /// <summary>Returns the per-endpoint limiter matching a request, when one applies.</summary>
     internal SlidingWindowLimiter? Find(HttpMethod method, Uri? requestUri)
     {
@@ -109,9 +169,7 @@ public sealed class IbkrRateLimiterRegistry : IDisposable
             return null;
         }
 
-        var path = requestUri.IsAbsoluteUri
-            ? requestUri.AbsolutePath
-            : requestUri.OriginalString.Split('?', 2)[0];
+        var path = PathOf(requestUri);
 
         foreach (var (template, limitMethod, limiter) in _endpointLimiters)
         {
@@ -139,5 +197,44 @@ public sealed class IbkrRateLimiterRegistry : IDisposable
         {
             limiter.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Names what a rejection is held against: the limiter that paced the request, so that
+    /// everything sharing the limit is held with it, or the exact path when nothing paced it.
+    /// </summary>
+    private static string BackoffKey(HttpMethod method, Uri? requestUri, SlidingWindowLimiter? limiter) =>
+        limiter?.Name
+            ?? (requestUri is null ? method.Method : $"{method.Method} {PathOf(requestUri)}");
+
+    private static string PathOf(Uri requestUri) =>
+        requestUri.IsAbsoluteUri
+            ? requestUri.AbsolutePath
+            : requestUri.OriginalString.Split('?', 2)[0];
+
+    /// <summary>
+    /// Reads a <c>Retry-After</c> as a duration. The header may carry either a delay or an absolute
+    /// date; a date already in the past reads as zero rather than as a negative hold.
+    /// </summary>
+    private Duration? ResolveRetryAfter(RetryConditionHeaderValue? retryAfter)
+    {
+        if (retryAfter is null)
+        {
+            return null;
+        }
+
+        if (retryAfter.Delta is { } delta)
+        {
+            var stated = Duration.FromTimeSpan(delta);
+            return stated > Duration.Zero ? stated : Duration.Zero;
+        }
+
+        if (retryAfter.Date is { } date)
+        {
+            var remaining = Instant.FromDateTimeOffset(date) - _scheduler.Now;
+            return remaining > Duration.Zero ? remaining : Duration.Zero;
+        }
+
+        return null;
     }
 }

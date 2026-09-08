@@ -1,3 +1,4 @@
+using System.Net;
 using IbkrDotNet.Trading.Configuration;
 
 namespace IbkrDotNet.Trading.Http.RateLimiting;
@@ -7,10 +8,12 @@ namespace IbkrDotNet.Trading.Http.RateLimiting;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The handler only delays; it does not interpret responses. A <c>429</c> that arrives anyway is
-/// surfaced by <see cref="IbkrApiClient"/>, which has the request context needed to describe it.
-/// The limiter state lives in <see cref="IbkrRateLimiterRegistry"/> so it survives the handler
-/// rotation <c>IHttpClientFactory</c> performs.
+/// The handler delays, and reports a <c>429</c> back to the limiters so the endpoint that produced
+/// it is held before the next request goes out. It does not interpret the response for the caller:
+/// the rejection passes through untouched, and turning it into an exception belongs to
+/// <see cref="IbkrApiClient"/>, which has the request context needed to describe it. The limiter
+/// state lives in <see cref="IbkrRateLimiterRegistry"/> so it survives the handler rotation
+/// <c>IHttpClientFactory</c> performs.
 /// </para>
 /// <para>
 /// <strong>This is not how the dependency injection package paces requests, and it is the second
@@ -45,6 +48,13 @@ public sealed class IbkrRateLimitHandler : DelegatingHandler
         await _registry.AcquireAsync(request.Method, request.RequestUri, cancellationToken)
             .ConfigureAwait(false);
 
-        return await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            _registry.Penalize(request.Method, request.RequestUri, response.Headers.RetryAfter);
+        }
+
+        return response;
     }
 }
