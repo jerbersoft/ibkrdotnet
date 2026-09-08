@@ -9,6 +9,8 @@ A .NET client for the [Interactive Brokers Web API](https://www.interactivebroke
 
 Targets `net10.0`. Every date and time value in the public API is a [NodaTime](https://nodatime.org) type — there is no `DateTime`, `DateTimeOffset` or `TimeSpan` anywhere in it.
 
+**Documentation:** guides and the generated API reference are built from `docs/` — see [Working on this repository](#working-on-this-repository) for how to build and serve them locally. This file is the reference the guides link back to.
+
 > **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists, the market scanner, FYIs & notifications, event contracts, alerts and PortfolioAnalyst — 90 of IBKR's 108 Trading endpoints — is implemented. All but ten have been exercised against a live gateway, executions included. The ten are the seven notification writes, which change settings on the username and cannot be undone through the API, and the three alert endpoints that need an alert to already exist — IBKR publishes no endpoint that creates one. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
 
 ## Getting started
@@ -198,8 +200,17 @@ var watchlists = await apiClient.SendAsync<JsonElement>(
 
 ```bash
 dotnet build IbkrDotNet.slnx -c Release
-dotnet test -c Release
+dotnet test --solution IbkrDotNet.slnx -c Release
 ```
+
+The documentation site is DocFX, pinned in `.config/dotnet-tools.json`. It renders this file alongside thirteen guides and the API reference generated from the XML doc comments:
+
+```bash
+dotnet tool restore
+dotnet docfx docs/docfx.json --serve
+```
+
+CI builds it with `--warningsAsErrors`, so a link that stops resolving — a heading here renamed, a guide moved — fails at the push that broke it rather than becoming a dead link nobody reports. `docs/_site/` and the generated `docs/api/*.yml` are gitignored; the site is a build artifact.
 
 Both packages carry a transcript of their public surface under `tests/*/PublicApi/`, and a test fails when the assembly stops matching it. Both are published, so a signature that changes is somebody's compile error; nothing else in the suite would notice a widened parameter or a type that stopped being sealed. When a change is intended, the failure writes the new surface beside the approved one as `.received.txt` — read the diff, then replace the approved file with it.
 
@@ -245,4 +256,4 @@ No credential is read or printed: the gateway holds the login, and the account i
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/jerbersoft/ibkrdotnet/blob/master/LICENSE).

@@ -1,0 +1,49 @@
+# The guides sidebar.
+#
+# Ordered by what a reader hits in sequence rather than alphabetically: getting in, staying in, then the three
+# groups where IBKR's behaviour differs most from what its documentation says. Troubleshooting and the FAQ sit at
+# the end because they are looked up, not read.
+#
+# DocsSiteTests checks that every guides/*.md is listed here and that every href exists — DocFX builds an orphan
+# page without a word.
+
+- name: Start here
+  items:
+    - name: Getting Started
+      href: getting-started.md
+    - name: Authentication
+      href: authentication.md
+    - name: Configuration
+      href: configuration.md
+    - name: Sessions
+      href: sessions.md
+
+- name: Using it
+  items:
+    - name: Placing Orders
+      href: orders.md
+    - name: Market Data
+      href: market-data.md
+    - name: Rate Limits
+      href: rate-limits.md
+    - name: Error Handling
+      href: error-handling.md
+
+- name: Concepts
+  items:
+    - name: Dates and Times
+      href: dates-and-times.md
+    - name: Endpoint Coverage
+      href: endpoint-coverage.md
+
+- name: Help
+  items:
+    - name: Troubleshooting
+      href: troubleshooting.md
+    - name: FAQ
+      href: faq.md
+
+- name: Contributing
+  items:
+    - name: Development
+      href: development.md

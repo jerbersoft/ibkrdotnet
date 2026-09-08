@@ -1,0 +1,78 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+
+  "metadata": [
+    {
+      "//": [
+        "The two shipping projects, named one by one rather than globbed as ../src/**/*.csproj. A",
+        "glob would silently pick up a third project the day one is added, and whether it belongs in",
+        "the published reference is a decision somebody should make in a diff. DocsSiteTests pins",
+        "this list to the projects under src/, so the decision cannot be skipped by omission in",
+        "either direction.",
+        "",
+        "samples/ is deliberately absent. The console tour and the live sweep are executables that",
+        "demonstrate the library; their internals are not a surface anybody calls.",
+        "",
+        "TargetFramework is pinned because DocFX loads these through MSBuildWorkspace and a",
+        "multi-targeted project would otherwise be ambiguous. There is only net10.0 today; the",
+        "property is what keeps this file honest if that ever stops being true."
+      ],
+      "src": [
+        {
+          "src": "../src",
+          "files": [
+            "IbkrDotNet.Trading/IbkrDotNet.Trading.csproj",
+            "IbkrDotNet.Extensions.DependencyInjection/IbkrDotNet.Extensions.DependencyInjection.csproj"
+          ]
+        }
+      ],
+      "dest": "api",
+      "properties": {
+        "TargetFramework": "net10.0",
+        "Configuration": "Release"
+      }
+    }
+  ],
+
+  "build": {
+    "//": [
+      "Content is enumerated rather than globbed as **/*.md, so that a working document written into",
+      "docs/ later is not published by accident. guides/ is listed; anything else has to be added",
+      "here on purpose.",
+      "",
+      "README.md is the repository README, rendered from the same file: one copy of the reference, on",
+      "GitHub and here. It is where the measured IBKR behaviour lives -- the surprises section is the",
+      "most valuable page in this repository -- and the guides link into it by anchor rather than",
+      "restating it. DocFX accepts the relative parent path and rejects an absolute one."
+    ],
+    "content": [
+      { "files": ["index.md", "toc.yml"] },
+      { "files": ["guides/**.md", "guides/**/toc.yml"] },
+      { "files": ["api/**.yml", "api/index.md"] },
+      { "files": ["README.md"], "src": ".." }
+    ],
+    "output": "_site",
+    "template": ["default", "modern"],
+
+    "//sitemap": [
+      "The one place in this repository that spells out the public URL. DocFX emits relative links",
+      "everywhere else, which is why the site works unchanged under a /ibkrdotnet/ path -- but a",
+      "sitemap has to carry absolute ones, so a wrong value here is the single thing that would point",
+      "search engines at a host that does not serve this site."
+    ],
+    "sitemap": {
+      "baseUrl": "https://jerbersoft.github.io/ibkrdotnet/",
+      "changefreq": "weekly"
+    },
+    "globalMetadata": {
+      "_appName": "IbkrDotNet",
+      "_appTitle": "IbkrDotNet",
+      "_appFooter": "IbkrDotNet — an independent .NET client for the Interactive Brokers Web API Trading surface. MIT. Not affiliated with or endorsed by Interactive Brokers.",
+      "_enableSearch": true,
+      "_gitContribute": {
+        "repo": "https://github.com/jerbersoft/ibkrdotnet",
+        "branch": "master"
+      }
+    }
+  }
+}
