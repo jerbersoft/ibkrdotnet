@@ -326,6 +326,84 @@ public class OrdersClientTests
         Assert.Equal("""{"orderId":1370093239,"reqId":"42","text":"Yes"}""", harness.LastRequest.Body);
     }
 
+    // ---- Captured from a live gateway -----------------------------------------------------------
+    //
+    // The fixtures below end '.live.json' because IBKR's published examples do not contain what they
+    // contain. Each one records a market order filling against a paper account, which is the only way
+    // to reach the execution timestamps and the empty-string prices; the documented examples show
+    // neither.
+
+    [Fact]
+    public async Task Reads_a_live_execution_whose_two_time_encodings_agree()
+    {
+        using var harness = new ClientHarness();
+        harness.RespondWithFixture("trading-orders/get-trade-history.live.json");
+        var client = new OrdersClient(harness.ApiClient);
+
+        var trades = await client.GetTradesAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        var trade = trades[0];
+        Assert.Equal("0000dc8f.6b9035f5.01.01", trade.ExecutionId);
+        Assert.Equal(new OrderId(245323648), trade.OrderId);
+        Assert.Equal("B", trade.Side);
+        Assert.Equal(317.56m, trade.Price);
+
+        // The claim this fixture exists to pin. IBKR sends the same moment twice, as
+        // 'trade_time' in YYYYMMDD-hh:mm:ss and 'trade_time_r' in epoch milliseconds, and a
+        // converter reading the text as anything but UTC would put the two hours apart. Against
+        // the live gateway they landed on the same instant to the second.
+        Assert.Equal(Instant.FromUtc(2026, 9, 8, 13, 58, 11), trade.TradeTimeUtc);
+        Assert.Equal(trade.TradeTimeUtc, trade.TradeTime);
+
+        // Undocumented: the resulting position, which IBKR's example does not carry.
+        Assert.Equal(11m, trade.ResultingPosition);
+    }
+
+    [Fact]
+    public async Task Reads_a_live_market_order_whose_limit_price_is_an_empty_string()
+    {
+        using var harness = new ClientHarness();
+        harness.RespondWithFixture("trading-orders/get-order-status.live.json");
+        var client = new OrdersClient(harness.ApiClient);
+
+        var status = await client.GetOrderStatusAsync(
+            new OrderId(245323648), TestContext.Current.CancellationToken);
+
+        // A market order has no limit price, and IBKR says so with "" rather than null or an
+        // absent member. Before this was handled the whole response failed to deserialize.
+        Assert.Null(status.LimitPrice);
+
+        Assert.Equal("Filled", status.Status);
+        Assert.Equal(317.56m, status.AveragePrice);
+        Assert.Equal(1m, status.CumulativeFill);
+
+        // 'order_time' is YYMMDDhhmmss, the one execution timestamp with no epoch twin to check it
+        // against. The fill it belongs to is dated one second later, which is what places it in UTC.
+        Assert.Equal(Instant.FromUtc(2026, 9, 8, 13, 58, 10), status.OrderTime);
+    }
+
+    [Fact]
+    public async Task Reads_a_live_filled_order_whose_price_is_an_empty_string()
+    {
+        using var harness = new ClientHarness();
+        harness.RespondWithFixture("trading-orders/get-open-orders.live.json");
+        var client = new OrdersClient(harness.ApiClient);
+
+        var orders = await client.GetOpenOrdersAsync(cancellationToken: TestContext.Current.CancellationToken);
+
+        var order = orders.Orders[0];
+        Assert.Null(order.Price);
+        Assert.Equal("Filled", order.Status);
+        Assert.Equal(317.56m, order.AveragePrice);
+        Assert.Equal(1m, order.FilledQuantity);
+        Assert.Equal(0m, order.RemainingQuantity);
+
+        // As with the execution: 'lastExecutionTime' is YYMMDDhhmmss, 'lastExecutionTime_r' is
+        // epoch milliseconds, and the two have to name the same moment.
+        Assert.Equal(Instant.FromUtc(2026, 9, 8, 13, 58, 10), order.LastExecutionTimeCompact);
+        Assert.Equal(order.LastExecutionTimeCompact, order.LastExecutionTime);
+    }
+
     [Fact]
     public async Task Refuses_a_submission_with_no_tickets()
     {

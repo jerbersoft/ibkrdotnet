@@ -233,6 +233,15 @@ public sealed record Execution
     [JsonPropertyName("account")]
     public string? Account { get; init; }
 
+    /// <summary>The account's resulting position in the instrument, after this execution.</summary>
+    /// <remarks>
+    /// Undocumented. IBKR's published example does not carry this field, but a live gateway sends it
+    /// on every execution as a quoted integer, which makes it the cheapest way to learn the position
+    /// a fill produced without a second call to <c>/portfolio</c>.
+    /// </remarks>
+    [JsonPropertyName("position")]
+    public decimal? ResultingPosition { get; init; }
+
     /// <summary>The client-supplied order reference.</summary>
     [JsonPropertyName("order_ref")]
     public string? OrderReference { get; init; }

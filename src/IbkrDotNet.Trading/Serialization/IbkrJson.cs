@@ -19,7 +19,9 @@ namespace IbkrDotNet.Trading.Serialization;
 /// <para>
 /// Unknown members are skipped rather than rejected: IBKR adds response fields without notice, and a
 /// new field should not break an existing caller. For the same reason, string properties tolerate a
-/// numeric or boolean value on the wire, which IBKR sends for several documented-as-string fields.
+/// numeric or boolean value on the wire, which IBKR sends for several documented-as-string fields,
+/// and nullable numeric properties tolerate the empty string IBKR sends for a number that does not
+/// apply.
 /// </para>
 /// </remarks>
 public static class IbkrJson
@@ -65,6 +67,15 @@ public static class IbkrJson
         // arrive as numbers on several endpoints. This is a property of the API, not of particular
         // fields, so it is handled once here.
         options.Converters.Add(new FlexibleStringConverter());
+
+        // IBKR sends an empty string for a number that does not apply -- the limit price of a market
+        // order, the price of a filled order -- alongside "None" and "N/A" elsewhere. A plain
+        // decimal? property reads those as a failure of the whole response, so the sentinels are
+        // absorbed here rather than field by field: the habit belongs to the API, and every field
+        // left uncovered is a crash waiting for the response that happens to omit it.
+        options.Converters.Add(new FlexibleDecimalConverter());
+        options.Converters.Add(new FlexibleInt32Converter());
+        options.Converters.Add(new FlexibleInt64Converter());
 
         // Populate the reflection-based type resolver and freeze, so the instance is safe to share
         // across threads and cannot be mutated by a caller.

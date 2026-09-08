@@ -15,9 +15,9 @@ namespace IbkrDotNet.Samples.Verify;
 /// account is flat, rather than assuming the cancel worked.
 /// </para>
 /// <para>
-/// A filling order would cover <c>Execution</c> and the trade-time encodings, which nothing here
-/// reaches. That is a deliberate omission: an unfillable order is the largest thing worth doing
-/// without a person present to watch it.
+/// Nothing here fills, so <c>Execution</c> and the trade-time encodings are out of reach. Those
+/// belong to <see cref="ExecutionChecks"/>, behind a separate flag: an order that cannot execute
+/// and an order that is meant to are different enough to ask for separately.
 /// </para>
 /// </remarks>
 internal static class OrderChecks
@@ -151,7 +151,7 @@ internal static class OrderChecks
             Price = limit,
         };
 
-    private static string Describe(OrderSubmissionResult result) => result switch
+    internal static string Describe(OrderSubmissionResult result) => result switch
     {
         OrderSubmissionResult.Accepted accepted =>
             $"Accepted {accepted.Orders[0].OrderId} ({accepted.Orders[0].OrderStatus})",

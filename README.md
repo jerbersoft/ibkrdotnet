@@ -9,7 +9,7 @@ A .NET client for the [Interactive Brokers Web API](https://www.interactivebroke
 
 Targets `net10.0`. Every date and time value in the public API is a [NodaTime](https://nodatime.org) type — there is no `DateTime`, `DateTimeOffset` or `TimeSpan` anywhere in it.
 
-> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists and the market scanner — 65 of IBKR's 108 Trading endpoints — is implemented. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
+> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists and the market scanner — 65 of IBKR's 108 Trading endpoints — is implemented, and every one of them has been exercised against a live gateway, executions included. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
 
 ## Getting started
 
@@ -114,7 +114,9 @@ The encryption and signing keys are different keys. Swapping them produces a liv
 
 **A market scanner selects contracts; it does not report the numbers it ranked them by.** Each row carries a `scan_data` field holding the ranked value, and IBKR's published example shows it on every row — but a live gateway omitted it from all fifty rows of a Top % Gainers scan, both pre-market and during regular trading hours, returning only the contracts and the column heading. Read quotes for the returned conids if the numbers matter. `/iserver/scanner/params` is separately awkward: it is 200 KB of reference data behind the tightest limit in the API, one request per fifteen minutes, so fetch it once and hold it. A `combo` filter's choices come back carrying nothing but which one is the default — no value, no label — so what to send for one has to be read out of Trader Workstation.
 
-**Time is encoded inconsistently, which is why this library uses NodaTime.** The same API sends epoch seconds, epoch milliseconds, epoch milliseconds inside a JSON string, `YYYYMMDD-hh:mm:ss`, `YYMMDDhhmmss`, `yyyyMMdd` and `HHmm` — sometimes two encodings of one value on the same object. Each field declares the converter for its documented format, so `ledger.RetrievedAt` (seconds) and `trade.TradeTime` (milliseconds) both arrive as a correct `Instant`. Trading schedules go further: opening and closing times are `LocalTime` values in the venue's own zone, reported as an IANA identifier, and `tradingScheduleDate` can mean "any Saturday" rather than a date — see `TradingScheduleDate`.
+**A number that does not apply comes back as an empty string.** A market order's `limit_price`, a filled order's `price` — IBKR sends `""` rather than `null` or nothing at all, and `"None"` and `"N/A"` appear in the same role elsewhere. Every nullable numeric property absorbs these as `null`, so one inapplicable field does not fail the whole response. A non-nullable one refuses instead of reading a plausible, wrong zero.
+
+**Time is encoded inconsistently, which is why this library uses NodaTime.** The same API sends epoch seconds, epoch milliseconds, epoch milliseconds inside a JSON string, `YYYYMMDD-hh:mm:ss`, `YYMMDDhhmmss`, `yyyyMMdd` and `HHmm` — sometimes two encodings of one value on the same object. Each field declares the converter for its documented format, so `ledger.RetrievedAt` (seconds) and `trade.TradeTime` (milliseconds) both arrive as a correct `Instant`. Where IBKR sends the same moment twice — `trade_time` beside `trade_time_r`, `lastExecutionTime` beside `lastExecutionTime_r` — a real fill on a live gateway confirms the text halves are UTC and that both decodings land on the same instant. Trading schedules go further: opening and closing times are `LocalTime` values in the venue's own zone, reported as an IANA identifier, and `tradingScheduleDate` can mean "any Saturday" rather than a date — see `TradingScheduleDate`.
 
 ## Endpoints not yet modelled
 
@@ -158,7 +160,11 @@ dotnet run --project samples/IbkrDotNet.Samples.Verify -- \
     --Ibkr:BaseAddress=https://localhost:5050 --TrustGatewayCertificate=true
 ```
 
-No order is submitted by default. `--Orders=true` adds the order write path, which submits a limit order priced a quarter below the market so it rests rather than fills, modifies it, and cancels it in a `finally` block. That is refused on anything but a paper account, and there is deliberately no flag to override it.
+No order is submitted by default. `--Orders=true` adds the order write path, which submits a limit order priced a quarter below the market so it rests rather than fills, modifies it, and cancels it in a `finally` block.
+
+`--Fills=true` goes further and lets an order execute: it buys one share at market, reads the execution back, and sells it again in a `finally` block, checking that the position returns to whatever the account started with rather than assuming it started flat. This is the only way to reach the four execution-time encodings, and it is worth reaching — the first run of it found that a market order's `limit_price` arrives as `""`, which failed the whole response. Unlike the rest of the sweep, these checks assert on the data: IBKR sends each execution time twice, and the two decodings disagreeing is a converter bug rather than a fact about the account.
+
+Both flags are refused on anything but a paper account, and there is deliberately no flag to override that.
 
 The watchlist checks do write without a flag, because a watchlist cannot move money. One is created under a fixed identifier, read back to confirm its contents, and deleted in a `finally` block; the identifier is checked against the existing lists first, so a watchlist the user created is never displaced.
 
