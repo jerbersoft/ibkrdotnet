@@ -116,8 +116,11 @@ public sealed record InstrumentDefinition
     /// </summary>
     /// <remarks>
     /// A list here, though the equivalent field on a position is a single object. The shape follows
-    /// IBKR rather than being normalized, so neither endpoint silently loses data.
+    /// IBKR rather than being normalized, so neither endpoint silently loses data. IBKR's own
+    /// example for this endpoint shows an array while a live gateway sends a bare object, so both
+    /// are accepted.
     /// </remarks>
     [JsonPropertyName("displayRule")]
+    [JsonConverter(typeof(SingleOrArrayConverter<DisplayRule>))]
     public IReadOnlyList<DisplayRule> DisplayRules { get; init; } = [];
 }
