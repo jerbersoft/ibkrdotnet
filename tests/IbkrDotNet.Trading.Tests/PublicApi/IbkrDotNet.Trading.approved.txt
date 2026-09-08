@@ -420,6 +420,7 @@ namespace IbkrDotNet.Trading.Configuration
     {
         public IbkrRateLimitingOptions() { }
         public System.Collections.Generic.IList<IbkrDotNet.Trading.Http.RateLimiting.IbkrRateLimit> AdditionalLimits { get; }
+        public NodaTime.Duration DefaultRetryAfter { get; set; }
         public bool Enabled { get; set; }
         public bool EnforceGlobalLimit { get; set; }
         public NodaTime.Duration MaxWait { get; set; }
@@ -521,6 +522,7 @@ namespace IbkrDotNet.Trading.Http.RateLimiting
     public sealed class IbkrRateLimiterRegistry : System.IDisposable
     {
         public IbkrRateLimiterRegistry(Microsoft.Extensions.Options.IOptions<IbkrDotNet.Trading.Configuration.IbkrTradingOptions> options, NodaTime.IClock clock) { }
+        public NodaTime.Duration DefaultRetryAfter { get; }
         public bool Enabled { get; }
         public NodaTime.Duration MaxWait { get; }
         public void Dispose() { }

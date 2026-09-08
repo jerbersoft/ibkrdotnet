@@ -79,6 +79,27 @@ public sealed class IbkrRateLimitingOptions
     public Duration MaxWait { get; set; } = Duration.FromSeconds(30);
 
     /// <summary>
+    /// How long an endpoint is held after IBKR rejects a request to it with
+    /// <c>429 Too Many Requests</c> but names no <c>Retry-After</c> and no published limit covers
+    /// the path. Defaults to 5 seconds.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Where a published limit does cover the path, its own window is used instead of this, on the
+    /// grounds that the window is the figure the client already believed and the rejection is only
+    /// evidence that it was not applied early enough.
+    /// </para>
+    /// <para>
+    /// This value is a judgement rather than something IBKR documents, and it is the least bad of
+    /// two mistakes. Held too briefly, a caller in a loop retries into the same rejection and keeps
+    /// doing so, which is precisely the behaviour that gets an address blocked. Held too long, a
+    /// single stray <c>429</c> stalls a healthy client -- though only up to
+    /// <see cref="MaxWait"/>, past which the caller is told rather than kept waiting.
+    /// </para>
+    /// </remarks>
+    public Duration DefaultRetryAfter { get; set; } = Duration.FromSeconds(5);
+
+    /// <summary>
     /// Extra limits to enforce alongside the published ones, matched before them.
     /// </summary>
     public IList<IbkrRateLimit> AdditionalLimits { get; } = [];

@@ -161,7 +161,8 @@ public class RateLimitHandlerTests
             new Uri("/v1/api/iserver/accounts", UriKind.Relative),
             TestContext.Current.CancellationToken);
 
-        // Pacing is the handler's only job; interpreting a 429 belongs to IbkrApiClient.
+        // The handler records the rejection against the limiters, but does not act on it for the
+        // caller: turning a 429 into an exception belongs to IbkrApiClient.
         Assert.Equal(HttpStatusCode.TooManyRequests, response.StatusCode);
     }
 

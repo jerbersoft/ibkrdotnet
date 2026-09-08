@@ -225,6 +225,7 @@ public class ConfigurationBindingTests
             ["RateLimiting:Enabled"] = "false",
             ["RateLimiting:EnforceGlobalLimit"] = "false",
             ["RateLimiting:MaxWait"] = "90",
+            ["RateLimiting:DefaultRetryAfter"] = "00:00:20",
         });
 
         Assert.Equal(IbkrEnvironment.Production, options.Environment);
@@ -235,6 +236,7 @@ public class ConfigurationBindingTests
 
         // A bare number is read as seconds.
         Assert.Equal(Duration.FromSeconds(90), options.RateLimiting.MaxWait);
+        Assert.Equal(Duration.FromSeconds(20), options.RateLimiting.DefaultRetryAfter);
     }
 
     [Fact]

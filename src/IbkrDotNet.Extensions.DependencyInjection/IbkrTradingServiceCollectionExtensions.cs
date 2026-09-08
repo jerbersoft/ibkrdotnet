@@ -51,6 +51,9 @@ public static class IbkrTradingServiceCollectionExtensions
             .Validate(
                 options => options.RateLimiting.MaxWait >= Duration.Zero,
                 $"{nameof(IbkrRateLimitingOptions.MaxWait)} cannot be negative.")
+            .Validate(
+                options => options.RateLimiting.DefaultRetryAfter >= Duration.Zero,
+                $"{nameof(IbkrRateLimitingOptions.DefaultRetryAfter)} cannot be negative.")
             // Fail at startup rather than at the first request, when a misconfiguration is far more
             // expensive to diagnose.
             .ValidateOnStart();
@@ -122,7 +125,8 @@ public static class IbkrTradingServiceCollectionExtensions
     ///   "RateLimiting": {
     ///     "Enabled": true,
     ///     "EnforceGlobalLimit": true,
-    ///     "MaxWait": "00:00:30"
+    ///     "MaxWait": "00:00:30",
+    ///     "DefaultRetryAfter": "00:00:05"
     ///   }
     /// }
     /// </code>

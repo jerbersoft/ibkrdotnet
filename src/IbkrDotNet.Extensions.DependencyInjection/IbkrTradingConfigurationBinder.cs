@@ -57,6 +57,11 @@ internal static class IbkrTradingConfigurationBinder
             {
                 options.RateLimiting.MaxWait = maxWait;
             }
+
+            if (TryParseDuration(rateLimiting["DefaultRetryAfter"], out var defaultRetryAfter))
+            {
+                options.RateLimiting.DefaultRetryAfter = defaultRetryAfter;
+            }
         }
     }
 

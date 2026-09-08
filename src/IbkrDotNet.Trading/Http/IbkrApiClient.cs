@@ -244,7 +244,7 @@ public sealed class IbkrApiClient : IIbkrApiClient
         return message;
     }
 
-    private static IbkrApiException CreateFailure(
+    private IbkrApiException CreateFailure(
         IbkrRequest request,
         HttpResponseMessage response,
         string body)
@@ -268,16 +268,32 @@ public sealed class IbkrApiClient : IIbkrApiClient
 
         if (status == HttpStatusCode.TooManyRequests)
         {
-            var retryAfter = ReadRetryAfter(response);
+            // Fed back into the limiters rather than only reported. The limits table is inference in
+            // places, so a rejection is the only signal that the local pacing is wrong about this
+            // endpoint; without it the next call is paced by the same wrong figure and rejected
+            // again, and IBKR answers a pattern of that by putting the address in a ten-minute
+            // penalty box.
+            var held = _rateLimiters?.Penalize(
+                request.Method,
+                new Uri(request.ToRelativeUri(), UriKind.Relative),
+                response.Headers.RetryAfter);
+
+            if (held is { } hold)
+            {
+                IbkrLog.HoldingAfterRejection(_logger, request.Method.Method, request.Path, hold);
+            }
+
             return new IbkrRateLimitExceededException(
                 $"{request} was rejected with 429 Too Many Requests. Repeated breaches can get the " +
-                $"calling IP address blocked by IBKR. Response body: {truncated}")
+                $"calling IP address blocked by IBKR." +
+                (held is { } window ? $" Further requests to that endpoint are held for {window}." : string.Empty) +
+                $" Response body: {truncated}")
             {
                 StatusCode = status,
                 Method = request.Method.Method,
                 Path = request.Path,
                 ResponseBody = truncated,
-                RetryAfter = retryAfter,
+                RetryAfter = held ?? ReadRetryAfter(response),
             };
         }
 
@@ -290,6 +306,11 @@ public sealed class IbkrApiClient : IIbkrApiClient
         };
     }
 
+    /// <summary>
+    /// Reads <c>Retry-After</c> for the caller when there are no limiters to resolve it. Only the
+    /// delay form is understood here: reading the header's absolute-date form needs a clock, and the
+    /// registry has one.
+    /// </summary>
     private static Duration? ReadRetryAfter(HttpResponseMessage response)
     {
         var retryAfter = response.Headers.RetryAfter;
@@ -314,4 +335,15 @@ internal static partial class IbkrLog
         Level = LogLevel.Debug,
         Message = "Sending {Method} {Path} to the IBKR Web API.")]
     public static partial void SendingRequest(ILogger logger, string method, string path);
+
+    [LoggerMessage(
+        EventId = 1001,
+        Level = LogLevel.Warning,
+        Message = "IBKR rejected {Method} {Path} with 429 Too Many Requests. Holding that endpoint " +
+                  "for {Hold} before sending to it again.")]
+    public static partial void HoldingAfterRejection(
+        ILogger logger,
+        string method,
+        string path,
+        Duration hold);
 }
