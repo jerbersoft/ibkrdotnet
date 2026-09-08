@@ -1,0 +1,32 @@
+{
+  "account": "U1234567",
+  "order_id": 167426254,
+  "tif": "GTC",
+  "alert_active": 1,
+  "alert_repeatable": 1,
+  "alert_email": "jonh.smith@example.com",
+  "alert_send_message": 1,
+  "alert_show_popup": 0,
+  "order_status": "Submitted",
+  "alert_triggered": 1,
+  "fg_color": "#FFFFFF",
+  "bg_color": "#0000CC",
+  "order_not_editable": false,
+  "itws_orders_only": 0,
+  "alert_mta_currency": "USD",
+  "alert_mta_defaults": "9:STATE=1,MIN=-260000,MAX=260000,STEP=500,DEF_MIN=-26000,DEF_MAX=26000|8:STATE=0,MIN=-15,MAX=15,STEP=0.5,DEF_MIN=-2,DEF_MAX=2|7:STATE=1,MIN=-5,MAX=5,STEP=0.5,DEF_MIN=-2,DEF_MAX=2|4:STATE=1,MIN=1,MAX=50,STEP=1,DEF_VAL=10|5:STATE=0",
+  "tool_id": 55834574848,
+  "time_zone": "all timezones can be here",
+  "condition_size": 1,
+  "condition_outside_rth": 0,
+  "conditions": [
+    {
+      "condition_type": 5,
+      "conidex": "*@*",
+      "contract_description_1": "Unknown",
+      "condition_value": "*",
+      "condition_logic_bind": true
+    }
+  ],
+  "alert_name": "MTA (AutoAlert)"
+}

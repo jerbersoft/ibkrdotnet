@@ -44,6 +44,9 @@ public interface IIbkrTradingClient
 
     /// <summary>The event contract endpoints.</summary>
     IEventContractsClient EventContracts { get; }
+
+    /// <summary>The alert endpoints.</summary>
+    IAlertsClient Alerts { get; }
 }
 
 /// <inheritdoc cref="IIbkrTradingClient" />
@@ -61,6 +64,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
     /// <param name="scanner">The scanner client.</param>
     /// <param name="notifications">The notifications client.</param>
     /// <param name="eventContracts">The event contract client.</param>
+    /// <param name="alerts">The alerts client.</param>
     public IbkrTradingClient(
         IIbkrSessionManager session,
         ISessionClient sessions,
@@ -72,7 +76,8 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         IWatchlistsClient watchlists,
         IScannerClient scanner,
         INotificationsClient notifications,
-        IEventContractsClient eventContracts)
+        IEventContractsClient eventContracts,
+        IAlertsClient alerts)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(sessions);
@@ -85,6 +90,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         ArgumentNullException.ThrowIfNull(scanner);
         ArgumentNullException.ThrowIfNull(notifications);
         ArgumentNullException.ThrowIfNull(eventContracts);
+        ArgumentNullException.ThrowIfNull(alerts);
 
         Session = session;
         Sessions = sessions;
@@ -97,6 +103,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         Scanner = scanner;
         Notifications = notifications;
         EventContracts = eventContracts;
+        Alerts = alerts;
     }
 
     /// <inheritdoc />
@@ -131,4 +138,7 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
 
     /// <inheritdoc />
     public IEventContractsClient EventContracts { get; }
+
+    /// <inheritdoc />
+    public IAlertsClient Alerts { get; }
 }
