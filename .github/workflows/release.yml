@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag to build the release from.
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  release:
+    name: Pack and publish a release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Source Link records the commit, so the packages have to be built from the tag itself
+          # rather than from whatever the default branch happens to be at the time.
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Read the version from the tag
+        id: version
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Check the tag matches the version in the build
+        run: |
+          declared=$(grep -oP '(?<=<VersionPrefix>)[^<]+' Directory.Build.props)
+          tagged="${{ steps.version.outputs.version }}"
+          # A tag that disagrees with VersionPrefix would publish packages whose version nobody can
+          # trace back to a commit. Better to fail here than to explain it later.
+          if [ "$declared" != "$tagged" ]; then
+            echo "Tag v$tagged does not match <VersionPrefix>$declared</VersionPrefix>." >&2
+            exit 1
+          fi
+
+      - name: Restore
+        run: dotnet restore IbkrDotNet.slnx
+
+      - name: Build
+        run: dotnet build IbkrDotNet.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test -c Release --no-build
+
+      - name: Pack
+        run: dotnet pack IbkrDotNet.slnx -c Release --no-build -o artifacts/packages
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.version.outputs.version }}" \
+            --title "v${{ steps.version.outputs.version }}" \
+            --notes-file .github/release-notes/v${{ steps.version.outputs.version }}.md \
+            --verify-tag \
+            artifacts/packages/*.nupkg \
+            artifacts/packages/*.snupkg
+
+      # Nothing is pushed to NuGet yet. When that changes, it belongs here, after the release is
+      # published and gated on a NUGET_API_KEY secret -- a push cannot be taken back, so it should
+      # not be the step that first discovers the packages are wrong.
