@@ -1,0 +1,20 @@
+{
+  "cfi_code": "",
+  "symbol": "IBM",
+  "cusip": null,
+  "con_id": 8314,
+  "industry": "Computers",
+  "instrument_type": "STK",
+  "trading_class": "IBM",
+  "valid_exchanges": "SMART,AMEX,NYSE,CBOE,PHLX,ISE,CHX,ARCA,NASDAQ,DRCTEDGE,BEX,BATS,EDGEA,BYX,NYSEDARK,NASDDARK,IEX,EDGX,FOXRIVER,PEARL,NYSENAT,IEXMID,JANELP,IMCLP,LTSE,MEMX,JUMPLP,OLDMCLP,RBCCMALP,IBEOS,GSLP,BLUEOCEAN,OVERNIGHT,JANEMID,G1XLP,PSX",
+  "allow_sell_long": false,
+  "is_zero_commission_security": false,
+  "local_symbol": "IBM",
+  "currency": "USD",
+  "underlying_con_id": 0,
+  "r_t_h": true,
+  "company_name": "INTL BUSINESS MACHINES CORP",
+  "smart_available": true,
+  "exchange": "SMART",
+  "category": "Computer Services"
+}

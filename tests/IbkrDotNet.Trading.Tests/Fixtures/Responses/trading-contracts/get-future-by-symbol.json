@@ -1,0 +1,22 @@
+{
+  "ES": [
+    {
+      "conid": 495512557,
+      "expirationDate": 20241220,
+      "longFuturesCutOff": 20241219,
+      "ltd": 20241219,
+      "shortFuturesCutOff": 20241219,
+      "symbol": "ES",
+      "underlyingConid": 11004968
+    },
+    {
+      "conid": 495512563,
+      "expirationDate": 20251219,
+      "longFuturesCutOff": 20251218,
+      "ltd": 20251218,
+      "shortFuturesCutOff": 20251218,
+      "symbol": "ES",
+      "underlyingConid": 11004968
+    }
+  ]
+}

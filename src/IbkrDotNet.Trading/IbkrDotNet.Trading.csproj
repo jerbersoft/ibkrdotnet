@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>IbkrDotNet.Trading</PackageId>
+    <Description>A .NET client for the Interactive Brokers Web API Trading surface. Supports Client Portal Gateway, OAuth 1.0a and OAuth 2.0 authentication, and uses NodaTime throughout for date and time values.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NodaTime" />
+    <PackageReference Include="NodaTime.Serialization.SystemTextJson" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="IbkrDotNet.Trading.Tests" />
+    <InternalsVisibleTo Include="IbkrDotNet.Extensions.DependencyInjection" />
+    <InternalsVisibleTo Include="IbkrDotNet.Extensions.DependencyInjection.Tests" />
+  </ItemGroup>
+
+</Project>

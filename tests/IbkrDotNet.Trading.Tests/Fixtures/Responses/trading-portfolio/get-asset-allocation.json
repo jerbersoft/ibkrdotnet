@@ -1,0 +1,53 @@
+{
+  "assetClass": {
+    "long": {
+      "BOND": 380106.54,
+      "CASH": 72425.68706744915,
+      "CRYPTO": 255.17,
+      "OPT": 44352.82,
+      "STK": 1564447.6240790943
+    },
+    "short": {
+      "CASH": -508096.16629793524,
+      "OPT": -80.53,
+      "STK": -103716.11109948158
+    }
+  },
+  "group": {
+    "long": {
+      "Aerospace/Defense": 380106.54,
+      "Auto Manufacturers": 18213.43337263364,
+      "Banks": 366666.31,
+      "Biotechnology": 49.72,
+      "Computers": 279285.37,
+      "Diversified Finan Serv": 45970.8,
+      "Internet": 164576.99,
+      "Others": 704313.8907064605,
+      "Semiconductors": 371.9,
+      "Software": 29607.2
+    },
+    "short": {
+      "Auto Manufacturers": -11763,
+      "Insurance": -4682.111099481583,
+      "Internet": -189.53,
+      "Semiconductors": -87162
+    }
+  },
+  "sector": {
+    "long": {
+      "Communications": 164576.99,
+      "Consumer, Cyclical": 18213.43337263364,
+      "Consumer, Non-cyclical": 49.72,
+      "Financial": 412637.11,
+      "Industrial": 380106.54,
+      "Others": 704313.8907064605,
+      "Technology": 309264.47000000003
+    },
+    "short": {
+      "Communications": -189.53,
+      "Consumer, Cyclical": -11763,
+      "Financial": -4682.111099481583,
+      "Technology": -87162
+    }
+  }
+}

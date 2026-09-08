@@ -1,0 +1,109 @@
+{
+  "accounts": [
+    "U1234567"
+  ],
+  "acctProps": {
+    "U1234567": {
+      "hasChildAccounts": false,
+      "supportsCashQty": true,
+      "liteUnderPro": false,
+      "supportsFractions": true,
+      "allowCustomerTime": true,
+      "autoFx": false,
+      "noFxConv": false
+    }
+  },
+  "aliases": {
+    "U1234567": "U1234567",
+    "All": "All"
+  },
+  "allowFeatures": {
+    "showGFIS": true,
+    "showEUCostReport": false,
+    "allowEventContract": true,
+    "allowFXConv": true,
+    "allowFinancialLens": true,
+    "allowMTA": false,
+    "allowTypeAhead": true,
+    "allowEventTrading": true,
+    "snapshotRefreshTimeout": 30,
+    "liteUser": false,
+    "showWebNews": true,
+    "research": true,
+    "debugPnl": true,
+    "showTaxOpt": true,
+    "showImpactDashboard": true,
+    "allowDynAccount": false,
+    "allowCrypto": false,
+    "allowedAssetTypes": "STK,CFD,OPT,FOP,WAR,FUT,BAG,PDC,CASH,IND,BOND,BILL,FUND,SLB,News,CMDTY,IOPT,ICU,ICS,PHYSS,CRYPTO",
+    "restrictTradeSubscription": false,
+    "showUkUserLabels": false,
+    "sideBySide": true,
+    "allowFA": false,
+    "allowLiteUnderPro": false
+  },
+  "chartPeriods": {
+    "STK": [
+      "*"
+    ],
+    "CFD": [
+      "*"
+    ],
+    "OPT": [
+      "2h",
+      "1d",
+      "2d",
+      "1w",
+      "1m"
+    ],
+    "FOP": [
+      "2h",
+      "1d",
+      "2d",
+      "1w",
+      "1m"
+    ],
+    "WAR": [
+      "*"
+    ],
+    "IOPT": [
+      "*"
+    ],
+    "FUT": [
+      "*"
+    ],
+    "CASH": [
+      "*"
+    ],
+    "IND": [
+      "*"
+    ],
+    "BOND": [
+      "*"
+    ],
+    "FUND": [
+      "*"
+    ],
+    "CMDTY": [
+      "*"
+    ],
+    "PHYSS": [
+      "*"
+    ],
+    "CRYPTO": [
+      "*"
+    ]
+  },
+  "groups": [
+    "All"
+  ],
+  "profiles": [],
+  "selectedAccount": "U1234567",
+  "serverInfo": {
+    "serverName": "server",
+    "serverVersion": "Build 99.99.9, May 22, 2020 4:19:22 PM"
+  },
+  "sessionId": "65ee8a41.0000001e",
+  "isPaper": true,
+  "isFT": false
+}

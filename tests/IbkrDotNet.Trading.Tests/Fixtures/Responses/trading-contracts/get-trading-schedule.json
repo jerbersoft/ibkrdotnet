@@ -1,0 +1,112 @@
+[
+  {
+    "id": "p101781",
+    "tradeVenueId": "v13038",
+    "exchange": "NYSE",
+    "description": "New York Stock Exchange",
+    "timezone": "America/New_York",
+    "schedules": [
+      {
+        "clearingCycleEndTime": "0000",
+        "tradingScheduleDate": "20000101",
+        "sessions": [],
+        "tradingtimes": [
+          {
+            "cancelDayOrders": "Y",
+            "closingTime": "2330",
+            "openingTime": "0035"
+          }
+        ]
+      },
+      {
+        "clearingCycleEndTime": "0000",
+        "tradingScheduleDate": "20000102",
+        "sessions": [],
+        "tradingtimes": [
+          {
+            "cancelDayOrders": "Y",
+            "closingTime": "2330",
+            "openingTime": "0035"
+          }
+        ]
+      },
+      {
+        "clearingCycleEndTime": "1700",
+        "tradingScheduleDate": "20000103",
+        "sessions": [],
+        "tradingtimes": [
+          {
+            "cancelDayOrders": "Y",
+            "closingTime": "2330",
+            "openingTime": "0035",
+            "prop": "LIQUID"
+          }
+        ]
+      },
+      {
+        "clearingCycleEndTime": "1700",
+        "tradingScheduleDate": "20000104",
+        "sessions": [],
+        "tradingtimes": [
+          {
+            "cancelDayOrders": "Y",
+            "closingTime": "2330",
+            "openingTime": "0035",
+            "prop": "LIQUID"
+          }
+        ]
+      },
+      {
+        "clearingCycleEndTime": "1700",
+        "tradingScheduleDate": "20000105",
+        "sessions": [],
+        "tradingtimes": [
+          {
+            "cancelDayOrders": "Y",
+            "closingTime": "2330",
+            "openingTime": "0035",
+            "prop": "LIQUID"
+          }
+        ]
+      },
+      {
+        "clearingCycleEndTime": "1700",
+        "tradingScheduleDate": "20000106",
+        "sessions": [],
+        "tradingtimes": [
+          {
+            "cancelDayOrders": "Y",
+            "closingTime": "2330",
+            "openingTime": "0035",
+            "prop": "LIQUID"
+          }
+        ]
+      },
+      {
+        "clearingCycleEndTime": "1700",
+        "tradingScheduleDate": "20000107",
+        "sessions": [],
+        "tradingtimes": [
+          {
+            "cancelDayOrders": "Y",
+            "closingTime": "2330",
+            "openingTime": "0035",
+            "prop": "LIQUID"
+          }
+        ]
+      },
+      {
+        "clearingCycleEndTime": "0000",
+        "tradingScheduleDate": "20240329",
+        "sessions": [],
+        "tradingtimes": [
+          {
+            "cancelDayOrders": "Y",
+            "closingTime": "2330",
+            "openingTime": "0035"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,50 @@
+{
+  "diffieHellman": [
+    {
+      "name": "ordinary",
+      "primeHex": "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca18217c32905e462e36ce3be39e772c180e86039b2783a2ec07a28fb5c55df06f4c52c9de2bcbf6955817183995497cea956ae515d2261898fa051015728e5a8aacaa68ffffffffffffffff",
+      "generator": 2,
+      "clientPrivateHex": "6861072c1e753a938661abe05b1b90b46762b34f4e26ea8e603235a1e58e1b1c",
+      "clientChallengeHex": "a33b36074092a0c981bffe6f2541ef0cb98dec66ccb9981d61eacc0e3ffde83f1f9da3b55fd9ab29f9cc25d221183e1edcb6b0d5f04ce94feb564c82980e0ffb48a858f3924b393e4db66c8ca5ae3e118f68197ed1971fd2858263210eb10f4f1636983d2a92f66e33aa558131430c631d627584ec46ae2a250aa3780d0577c07343d61f6de349e1d7f6b776980fef715a04c115ab920eeea0829c98169f3e045d30c0f22139c2c78754a0c71d5d8d3533ff384e86794f355bc443432bb6535f6d54daf6a2693cd1c23026bb778c87311909fc36fc6d33c1b3bb020a196b8ccf05b863bc09e29a23da8c5aae2d5193940f3aec0da61fb0ffbae528e3a68fba30",
+      "serverResponseHex": "8e8ce765e0b553dcb1aa19a6732759cc071deeed9a8d43e2e4478019bd511bebcab113b05049a24f9cfe48b160b211a65397d93b3b758e6f9f16026b9e1e6f9f1ef01e3dffbb647a07395d75d19d893c5420672d913886374eb91b70fca1e0c82e2ca33c7e00823a4280809127c955aa6520c53480ed62c36b4df2107480f15caf88247a4d8b1250654b3cd94d639dbce8c1f9fe230df4a42ac98f5950837a1de32ffbb15ebc1a5cf0f2de8f13bf955422933a102f86680eb2a5a9004483744be5738b3d3dcd1049fed462e44b5b9cc161234f8f992721beba2bded180b223bc4de21e877084f73c4f69db3f51179daba7c1a014e9fd84201ca633fda8854b7",
+      "sharedSecretBitLength": 2046,
+      "prependHex": "518c3b7a385f43d205b8157b8cd2fc0f3e036150",
+      "liveSessionToken": "UhOSgye8ZpucdR3UVXWb22rnU2I=",
+      "liveSessionTokenSignature": "e79afa8a3e0d7a0879bf34ace2ee13052dbc858e",
+      "consumerKey": "TESTCONS"
+    },
+    {
+      "name": "signBitPadded",
+      "primeHex": "ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7edee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf0598da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb9ed529077096966d670c354e4abc9804f1746c08ca18217c32905e462e36ce3be39e772c180e86039b2783a2ec07a28fb5c55df06f4c52c9de2bcbf6955817183995497cea956ae515d2261898fa051015728e5a8aacaa68ffffffffffffffff",
+      "generator": 2,
+      "clientPrivateHex": "7f780056b2cde10df1adedbc5c915e933e108dd1d5424a1ff33b82db7842ae8c",
+      "clientChallengeHex": "1dc7787cb842928a99bb3e51421fe3cd52f72ecbe126d7cd82944a689e111563fa43ac152beae29754ed8b17015398bc7f0b8e5c54ca16c4c22b5cc695672bd82d70cbca7ef74cfd01dab4e78ec818251f415228a0ad41d1e4404117b03ea9c64567b7e85fab9c43bfc9df611cd868b5c6154ed006b032a395cd491840233bbad7f646f5d6a78dd0569be632f16897a9a154ac358289f4d7de884519617bf0e98764912fc74843622e82920787651c232057bf7741920aebbb7af954719df5c9e3696dc256ab00af6ebbe246532ff71ae0ebfbeccc82ec72e92c9dcf5960154ed6099aa14cdd26561aade30b781a743ea0935525dcaaeb3b0e3d86dffc8f0116",
+      "serverResponseHex": "a1ad7bfa495688eb1ef1f43b680db2330afc57842dee89d5856d12b9792c63f06601d0126340e154eb795550b9f3c55b6e038529175d29dea9998321d30c1b943ab1efad0d5a7a0d828c2456ae1d8ffff0e210a0e56e46705fb67641d4c51261b9ad88a811851bc343afb3e3f03dae23ae75836f1f438c1c38ff72ebd4054bb81e1ba7a987d00ce230b2d04b34cba539f7a11a6d6ffbaa6ce4c93d9c87972d46d9e8409328ba3f16528ba0b1c06b8e28a119700846769100409c65867c8ce51be77af32b5efd5d3c63c14ee2305d02aac5db4c6d7e768b33d2c7efae92f181e00a87f0a9f40ae4dde7ffcce4c654e9bb7ab9a765b0d0732360eebe8f6fa0d4f6",
+      "sharedSecretBitLength": 2048,
+      "prependHex": "2973a1b862d4d2b3a4472c91e6ca46a34182a93f",
+      "liveSessionToken": "qO96d62ORE4Qa/IM9PNAbSyRXlI=",
+      "liveSessionTokenSignature": "2bd8d17d2e5e2002ad4fa14b85eb637d26c9e8d7",
+      "consumerKey": "TESTCONS"
+    }
+  ],
+  "baseString": {
+    "method": "GET",
+    "url": "https://api.ibkr.com/v1/api/portfolio/accounts",
+    "params": {
+      "oauth_consumer_key": "TESTCONS",
+      "oauth_nonce": "b2490f57a3b0",
+      "oauth_signature_method": "HMAC-SHA256",
+      "oauth_timestamp": "1714489440",
+      "oauth_token": "a1b2c3d4e5f60718293a"
+    },
+    "normalizedParams": "oauth_consumer_key=TESTCONS&oauth_nonce=b2490f57a3b0&oauth_signature_method=HMAC-SHA256&oauth_timestamp=1714489440&oauth_token=a1b2c3d4e5f60718293a",
+    "expected": "GET&https%3A%2F%2Fapi.ibkr.com%2Fv1%2Fapi%2Fportfolio%2Faccounts&oauth_consumer_key%3DTESTCONS%26oauth_nonce%3Db2490f57a3b0%26oauth_signature_method%3DHMAC-SHA256%26oauth_timestamp%3D1714489440%26oauth_token%3Da1b2c3d4e5f60718293a"
+  },
+  "percentEncoding": {
+    "https://api.ibkr.com/v1/api/portfolio/accounts": "https%3A%2F%2Fapi.ibkr.com%2Fv1%2Fapi%2Fportfolio%2Faccounts",
+    "abc+/=&123": "abc%2B%2F%3D%26123",
+    "TESTCONS": "TESTCONS",
+    "a-b_c.d~e": "a-b_c.d~e",
+    "AAAA/BBBB+CCC=": "AAAA%2FBBBB%2BCCC%3D"
+  }
+}

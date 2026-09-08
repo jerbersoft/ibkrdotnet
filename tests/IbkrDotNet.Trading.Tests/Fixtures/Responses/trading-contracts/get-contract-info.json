@@ -1,0 +1,14 @@
+{
+  "conid": 8314,
+  "ticker": "IBM",
+  "secType": "STK",
+  "listingExchange": "NYSE",
+  "exchange": "SMART",
+  "companyName": "INTL BUSINESS MACHINES CORP",
+  "currency": "USD",
+  "validExchanges": "SMART,AMEX,NYSE,CBOE,PHLX,ISE,CHX,ARCA,NASDAQ,DRCTEDGE,BEX,BATS,EDGEA,BYX,NYSEDARK,NASDDARK,IEX,EDGX,FOXRIVER,PEARL,NYSENAT,IEXMID,JANELP,IMCLP,LTSE,MEMX,JUMPLP,OLDMCLP,RBCCMALP,IBEOS,GSLP,BLUEOCEAN,OVERNIGHT,JANEMID,G1XLP,PSX",
+  "priceRendering": null,
+  "maturityDate": null,
+  "right": "P",
+  "strike": 0
+}

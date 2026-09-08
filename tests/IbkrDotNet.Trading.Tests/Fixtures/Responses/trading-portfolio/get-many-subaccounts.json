@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "pageNum": 0,
+    "pageSize": 20,
+    "total": 1
+  },
+  "subaccounts": [
+    {
+      "PrepaidCrypto-P": false,
+      "PrepaidCrypto-Z": false,
+      "accountAlias": "None",
+      "accountId": "U1234567",
+      "accountStatus": 1644814800000,
+      "accountTitle": "",
+      "accountVan": "U1234567",
+      "acctCustType": "LLC",
+      "brokerageAccess": false,
+      "businessType": "IB_PROSERVE",
+      "category": "",
+      "clearingStatus": "O",
+      "covestor": false,
+      "currency": "USD",
+      "desc": "U1234567",
+      "displayName": "U1234567",
+      "ibEntity": "IBLLC-US",
+      "id": "U1234567",
+      "noClientTrading": false,
+      "parent": {
+        "accountId": "",
+        "isMChild": false,
+        "isMParent": false,
+        "isMultiplex": false,
+        "mmc": []
+      },
+      "trackVirtualFXPortfolio": true,
+      "tradingType": "PMRGN",
+      "type": "DEMO",
+      "faclient": false
+    }
+  ]
+}

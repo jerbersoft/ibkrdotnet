@@ -1,0 +1,40 @@
+{
+  "orders": [
+    {
+      "account": "DU4355398",
+      "acct": "U1234567",
+      "avgPrice": "0.8908",
+      "bgColor": "#FFFFFF",
+      "cashCcy": "CAD",
+      "companyName": "Australian dollar",
+      "conid": "15016138",
+      "conidex": "15016138@IDEALPRO",
+      "description1": "AUD.CAD",
+      "exchange": "IDEALPRO",
+      "fgColor": "#000000",
+      "filledQuantity": "2499.99",
+      "isEventTrading": "0",
+      "lastExecutionTime": "240425160326",
+      "lastExecutionTime_r": "1714061006000",
+      "listingExchange": "FXCONV",
+      "orderDesc": "Bought 2806.46 Limit 0.90000, Day",
+      "orderId": 1370093238,
+      "orderType": "Limit",
+      "order_ccp_status": "Filled",
+      "origOrderType": "LIMIT",
+      "price": "0.90000",
+      "remainingQuantity": "0",
+      "secType": "CASH",
+      "side": "BUY",
+      "sizeAndFills": "2.4K CAD",
+      "status": "Filled",
+      "supportsTaxOpt": "0",
+      "taxOptimizerId": "12334",
+      "ticker": "AUD",
+      "timeInForce": "CLOSE",
+      "totalCashSize": "2500",
+      "totalSize": "2806.46"
+    }
+  ],
+  "snapshot": true
+}

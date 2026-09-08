@@ -1,0 +1,29 @@
+{
+  "amount": {
+    "amount": "1,977.60 USD (10 Shares)",
+    "commission": "1 USD",
+    "total": "1,978.60 USD"
+  },
+  "equity": {
+    "current": "123,456",
+    "change": "-1",
+    "after": "123,455"
+  },
+  "initial": {
+    "current": "1000",
+    "change": "652",
+    "after": "1652"
+  },
+  "maintenance": {
+    "current": "900",
+    "change": "590\"\"",
+    "after": "1490"
+  },
+  "position": {
+    "current": "20",
+    "change": "10",
+    "after": "30"
+  },
+  "warn": "21/You are trying to submit an order without having market data for this instrument. \nIB strongly recommends against this kind of blind trading which may result in \nerroreous or unexpected trades.",
+  "error": null
+}
