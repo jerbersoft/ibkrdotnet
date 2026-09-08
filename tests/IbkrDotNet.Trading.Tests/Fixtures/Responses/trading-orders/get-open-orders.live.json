@@ -1,0 +1,37 @@
+{
+  "orders": [
+    {
+      "acct": "DU1234567",
+      "conidex": "265598",
+      "conid": 265598,
+      "account": "DU1234567",
+      "orderId": 245323648,
+      "cashCcy": "USD",
+      "sizeAndFills": "1",
+      "orderDesc": "Bought 1 AAPL Market, Day",
+      "description1": "AAPL",
+      "ticker": "AAPL",
+      "secType": "STK",
+      "listingExchange": "NASDAQ.NMS",
+      "remainingQuantity": 0.0,
+      "filledQuantity": 1.0,
+      "totalSize": 1.0,
+      "companyName": "APPLE INC",
+      "status": "Filled",
+      "order_ccp_status": "Filled",
+      "origOrderType": "MARKET",
+      "supportsTaxOpt": "1",
+      "lastExecutionTime": "260908135810",
+      "orderType": "Market",
+      "bgColor": "#FFFFFF",
+      "fgColor": "#000000",
+      "isEventTrading": "0",
+      "price": "",
+      "timeInForce": "CLOSE",
+      "lastExecutionTime_r": 1788875890000,
+      "side": "BUY",
+      "avgPrice": "317.56"
+    }
+  ],
+  "snapshot": true
+}

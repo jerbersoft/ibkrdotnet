@@ -292,6 +292,55 @@ public class ConverterTests
         Assert.Equal(192.26m, result.Price);
     }
 
+    private sealed record OptionalMoney
+    {
+        // Deliberately carries no [JsonConverter]: the point is that an ordinary decimal? property
+        // absorbs these without the model having to know which fields IBKR leaves empty.
+        [JsonPropertyName("limit_price")]
+        public decimal? LimitPrice { get; init; }
+
+        [JsonPropertyName("alert_active")]
+        public int? AlertActive { get; init; }
+    }
+
+    [Theory]
+    [InlineData("""{"limit_price":""}""")]
+    [InlineData("""{"limit_price":" "}""")]
+    [InlineData("""{"limit_price":"None"}""")]
+    [InlineData("""{"limit_price":"N/A"}""")]
+    [InlineData("""{"limit_price":null}""")]
+    public void A_nullable_number_reads_ibkrs_stand_ins_for_an_absent_value_as_null(string json)
+    {
+        // GET /iserver/account/order/status/{id} returns "limit_price": "" for a market order,
+        // which read as a failure of the entire response until this was handled.
+        Assert.Null(Read<OptionalMoney>(json).LimitPrice);
+    }
+
+    [Theory]
+    [InlineData("""{"limit_price":317.56}""", 317.56)]
+    [InlineData("""{"limit_price":"317.56"}""", 317.56)]
+    public void A_nullable_number_still_reads_both_encodings_of_a_present_value(string json, double expected)
+    {
+        Assert.Equal((decimal)expected, Read<OptionalMoney>(json).LimitPrice);
+    }
+
+    [Fact]
+    public void A_nullable_integer_reads_the_same_stand_ins()
+    {
+        Assert.Null(Read<OptionalMoney>("""{"alert_active":""}""").AlertActive);
+        Assert.Equal(1, Read<OptionalMoney>("""{"alert_active":"1"}""").AlertActive);
+    }
+
+    [Fact]
+    public void A_non_nullable_number_says_what_to_change_rather_than_reading_an_absent_value_as_zero()
+    {
+        // Reading "" as 0 would be worse than failing: a limit price of zero is a plausible number
+        // and a wrong one.
+        var ex = Assert.Throws<IbkrSerializationException>(() => Read<Money>("""{"price":""}"""));
+
+        Assert.Contains("Decimal?", ex.Message, StringComparison.Ordinal);
+    }
+
     // ---- Identifiers ------------------------------------------------------------------------
 
     private sealed record Contract

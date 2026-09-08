@@ -37,6 +37,17 @@ internal static class JsonReaderNumerics
         }
     }
 
+    public static int ReadInt32(ref Utf8JsonReader reader, Type targetType)
+    {
+        var value = ReadInt64(ref reader, "an integer", targetType);
+        return value is >= int.MinValue and <= int.MaxValue
+            ? (int)value
+            : throw IbkrSerializationException.ForValue(
+                value.ToString(CultureInfo.InvariantCulture),
+                "an integer",
+                targetType);
+    }
+
     public static double ReadDouble(ref Utf8JsonReader reader, Type targetType)
     {
         switch (reader.TokenType)

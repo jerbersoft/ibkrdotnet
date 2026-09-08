@@ -1,0 +1,31 @@
+[
+  {
+    "execution_id": "0000dc8f.6b9035f5.01.01",
+    "symbol": "AAPL",
+    "supports_tax_opt": "1",
+    "side": "B",
+    "order_description": "Bot 1 @ 317.56 on IBKRATS",
+    "trade_time": "20260908-13:58:11",
+    "trade_time_r": 1788875891000,
+    "size": 1.0,
+    "price": "317.56",
+    "exchange": "IBKRATS",
+    "commission": "1.0",
+    "net_amount": 317.56,
+    "account": "DU1234567",
+    "accountCode": "DU1234567",
+    "account_allocation_name": "DU1234567",
+    "company_name": "APPLE INC",
+    "contract_description_1": "AAPL",
+    "sec_type": "STK",
+    "listing_exchange": "NASDAQ.NMS",
+    "conid": 265598,
+    "conidEx": "265598",
+    "position": "11",
+    "clearing_id": "IB",
+    "clearing_name": "IB",
+    "liquidation_trade": "0",
+    "is_event_trading": "0",
+    "order_id": 245323648
+  }
+]

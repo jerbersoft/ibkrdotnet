@@ -4,19 +4,16 @@ using System.Text.Json.Serialization;
 namespace IbkrDotNet.Trading.Serialization.Converters;
 
 /// <summary>
-/// Reads a <see cref="double"/> that Interactive Brokers may encode as a JSON number or as a JSON
-/// string.
+/// Reads a <see cref="double"/> that Interactive Brokers may encode as a JSON number, as a JSON
+/// string, or as one of its textual stand-ins for an absent value.
 /// </summary>
-public sealed class FlexibleDoubleConverter : JsonConverter<double>
+public sealed class FlexibleDoubleConverter : IbkrStructConverterFactory<double>
 {
     /// <inheritdoc />
-    public override double Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+    protected override double ReadValue(ref Utf8JsonReader reader) =>
         JsonReaderNumerics.ReadDouble(ref reader, typeof(double));
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, double value, JsonSerializerOptions options)
-    {
-        ArgumentNullException.ThrowIfNull(writer);
+    protected override void WriteValue(Utf8JsonWriter writer, double value) =>
         writer.WriteNumberValue(value);
-    }
 }

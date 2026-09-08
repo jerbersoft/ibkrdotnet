@@ -8,7 +8,13 @@
 //       --Ibkr:BaseAddress=https://localhost:5050 --TrustGatewayCertificate=true
 //
 // By default no order is submitted. Add --Orders=true to also exercise the order write path with a
-// resting limit order that cannot fill; that requires a paper account and is refused on any other.
+// resting limit order that cannot fill.
+//
+// --Fills=true goes further and submits a market order for one share, reads back the execution, and
+// sells it again to flatten. It is the only way to reach the four execution-time encodings, whose
+// fixtures were transcribed from IBKR's documentation and had never been checked against the API.
+//
+// Both flags require a paper account and are refused on any other.
 //
 // The watchlist checks do write, because a watchlist cannot move money: one is created under a fixed
 // identifier, read back and deleted again, and the identifier is checked against the existing lists
@@ -58,6 +64,7 @@ using var host = builder.Build();
 var ibkr = host.Services.GetRequiredService<IIbkrTradingClient>();
 var gateway = host.Services.GetRequiredService<IOptions<IbkrTradingOptions>>().Value.ResolveBaseAddress();
 var writeOrders = builder.Configuration.GetValue("Orders", defaultValue: false);
+var fillOrders = builder.Configuration.GetValue("Fills", defaultValue: false);
 var cancellationToken = CancellationToken.None;
 
 Console.WriteLine($"Gateway: {gateway}");
@@ -96,21 +103,32 @@ var context = await ReadOnlyChecks.RunAsync(ibkr, probe, account, cancellationTo
 await WatchlistChecks.RunAsync(ibkr, probe, context, cancellationToken);
 await ScannerChecks.RunAsync(ibkr, probe, cancellationToken);
 
-if (!writeOrders)
+// IBKR gives paper accounts a DU prefix. There is deliberately no flag to override the check: an
+// order sweep against a funded account should take more than a command line to arrange.
+var paper = IsPaperAccount(account);
+
+if (!writeOrders || !paper)
 {
     probe.Group("Orders (write path)");
-    probe.Skip("the order write path", "not requested; pass --Orders=true to include it");
-}
-else if (!IsPaperAccount(account))
-{
-    // IBKR gives paper accounts a DU prefix. There is deliberately no flag to override this: an
-    // order sweep against a funded account should take more than a command line to arrange.
-    probe.Group("Orders (write path)");
-    probe.Skip("the order write path", $"{Mask(account)} is not a paper account");
+    probe.Skip(
+        "the order write path",
+        writeOrders ? $"{Mask(account)} is not a paper account" : "not requested; pass --Orders=true to include it");
 }
 else
 {
     await OrderChecks.RunAsync(ibkr, probe, account, context, cancellationToken);
+}
+
+if (!fillOrders || !paper)
+{
+    probe.Group("Executions (filling order)");
+    probe.Skip(
+        "the fill path",
+        fillOrders ? $"{Mask(account)} is not a paper account" : "not requested; pass --Fills=true to include it");
+}
+else
+{
+    await ExecutionChecks.RunAsync(ibkr, probe, account, context, cancellationToken);
 }
 
 return probe.Report() ? 0 : 1;
