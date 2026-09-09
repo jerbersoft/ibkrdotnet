@@ -22,13 +22,21 @@
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>ibkr;interactive-brokers;trading;webapi;nodatime</PackageTags>
-    <VersionPrefix>0.2.0</VersionPrefix>
+    <VersionPrefix>0.3.0</VersionPrefix>
   </PropertyGroup>
 
-  <!-- Deterministic, source-linked builds. -->
+  <!--
+    Deterministic, source-linked builds. Source Link itself needs no PackageReference — see the
+    comment in Directory.Packages.props for why adding one breaks it.
+
+    PublishRepositoryUrl is what puts the branch and commit into the packed nuspec. RepositoryUrl
+    above is set by hand and renders as "Source repository" on nuget.org either way; the commit is
+    the half that makes a published package debuggable.
+  -->
   <PropertyGroup>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>

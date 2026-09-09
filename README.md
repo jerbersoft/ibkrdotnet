@@ -15,6 +15,17 @@ Targets `net10.0`. Every date and time value in the public API is a [NodaTime](h
 
 ## Getting started
 
+Both packages are on nuget.org. Every release before `1.0.0` is published as a prerelease while the
+public API settles, so `--prerelease` is required:
+
+```sh
+dotnet add package IbkrDotNet.Extensions.DependencyInjection --prerelease
+```
+
+`IbkrDotNet.Extensions.DependencyInjection` depends on `IbkrDotNet.Trading`, so that one line is
+enough for a host that registers through `AddIbkrTrading`. Reference `IbkrDotNet.Trading` on its own
+only if you are constructing the client yourself without `Microsoft.Extensions.DependencyInjection`.
+
 ```csharp
 builder.Services
     .AddIbkrTrading(options =>

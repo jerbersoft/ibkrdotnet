@@ -1,26 +1,57 @@
 name: Release
 
+# Tag-driven. Pushing a v* tag builds that tag, publishes a GitHub Release, and pushes both packages
+# to nuget.org. Nothing else reaches the feed: there is no CI prerelease stream in this repository,
+# so a version exists on nuget.org only because somebody tagged it.
+#
+# PRERELEASES. The tag carries the whole version, suffix included -- v0.3.0-preview.1 publishes
+# 0.3.0-preview.1 and marks the GitHub Release as a prerelease. <VersionPrefix> in
+# Directory.Build.props holds only the 0.3.0 half, which is why the check below compares the prefix
+# rather than the tag.
+#
+# This workflow is not exercised by CI -- it only runs on a tag push, so a tag IS the first real
+# test of any change made to it. Prefer proving a change with a prerelease tag over a stable one.
+
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
     inputs:
       tag:
-        description: The tag to build the release from.
+        description: The tag to build the release from. It has to exist already.
         required: true
 
 permissions:
-  contents: write
+  contents: read
 
+# Ordered, and the order is load-bearing: the core is pushed before the package that depends on it,
+# so a refused push never leaves a package on the feed declaring a dependency on one that is not
+# there. PackagingTests pins this list against the projects under src/.
 env:
+  PACKAGES: IbkrDotNet.Trading IbkrDotNet.Extensions.DependencyInjection
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+# A publish that has started is never cancelled: half a push is worse than a late one, and nuget.org
+# keeps whatever arrived.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
   release:
     name: Pack and publish a release
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # Raised here rather than at workflow level so the elevated rights belong to the one job that
+    # needs them. id-token is the OIDC token NuGet/login exchanges for a nuget.org key; contents is
+    # what `gh release create` writes with.
+    permissions:
+      contents: write
+      id-token: write
+
     steps:
       - uses: actions/checkout@v7
         with:
@@ -34,22 +65,42 @@ jobs:
         with:
           global-json-file: global.json
 
+      # Splits v0.3.0-preview.1 into the version, the 0.3.0 prefix and the preview.1 suffix.
+      #
+      # VersionSuffix is exported to the environment rather than passed as -p: on each command,
+      # because MSBuild reads environment variables as properties. That keeps the value identical
+      # across build, test and pack -- and it has to be identical, since test and pack both run
+      # --no-build against what the build produced.
       - name: Read the version from the tag
         id: version
+        env:
+          TAG: ${{ inputs.tag || github.ref_name }}
         run: |
-          tag="${{ inputs.tag || github.ref_name }}"
-          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          version="${TAG#v}"
+          prefix="${version%%-*}"
+          if [ "$prefix" = "$version" ]; then suffix=""; else suffix="${version#*-}"; fi
+          {
+            echo "version=$version"
+            echo "prefix=$prefix"
+            echo "suffix=$suffix"
+          } >> "$GITHUB_OUTPUT"
+          echo "VersionSuffix=$suffix" >> "$GITHUB_ENV"
+          echo "Tag $TAG -> version $version (prefix $prefix, suffix ${suffix:-<none, this is a stable release>})"
 
+      # Tagging v0.4.0 against a tree whose VersionPrefix still reads 0.3.0 publishes a version
+      # nobody can trace back to a commit, permanently. This is the cheapest place to catch it.
       - name: Check the tag matches the version in the build
+        env:
+          PREFIX: ${{ steps.version.outputs.prefix }}
         run: |
+          set -euo pipefail
           declared=$(grep -oP '(?<=<VersionPrefix>)[^<]+' Directory.Build.props)
-          tagged="${{ steps.version.outputs.version }}"
-          # A tag that disagrees with VersionPrefix would publish packages whose version nobody can
-          # trace back to a commit. Better to fail here than to explain it later.
-          if [ "$declared" != "$tagged" ]; then
-            echo "Tag v$tagged does not match <VersionPrefix>$declared</VersionPrefix>." >&2
+          if [ "$declared" != "$PREFIX" ]; then
+            echo "::error::Tag names version prefix $PREFIX but Directory.Build.props declares <VersionPrefix>$declared</VersionPrefix>. Either the tag is wrong or the bump was never committed."
             exit 1
           fi
+          echo "Tag agrees with <VersionPrefix>$declared</VersionPrefix>."
 
       - name: Restore
         run: dotnet restore IbkrDotNet.slnx
@@ -63,17 +114,133 @@ jobs:
       - name: Pack
         run: dotnet pack IbkrDotNet.slnx -c Release --no-build -o artifacts/packages
 
-      - name: Publish the release
+      # Makes PACKAGES govern the artefacts rather than merely describe them, in both directions:
+      # nothing unaccounted for survives to the push, and nothing the list names may go missing from
+      # it. The push below relies on the second loop -- it pushes one file per id by name, so "the
+      # file exists" has to be established here.
+      - name: Partition the packed output against PACKAGES
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for file in artifacts/packages/*.nupkg; do
+            id="${file#artifacts/packages/}"
+            id="${id%.$VERSION.nupkg}"
+            if [[ " $PACKAGES " != *" $id "* ]]; then
+              echo "::error::$file is not named by PACKAGES. Add $id to PACKAGES in this workflow to publish it, or set IsPackable false if it should not ship -- PackagingTests requires every project under src/ to be named here. A file that does not end in .$VERSION.nupkg lands here too, which means it packed at a version this run did not produce."
+              exit 1
+            fi
+          done
+          for id in $PACKAGES; do
+            if [ ! -f "artifacts/packages/$id.$VERSION.nupkg" ]; then
+              echo "::error::PACKAGES names $id but artifacts/packages/$id.$VERSION.nupkg does not exist. It either failed to pack, changed its PackageId, or set IsPackable false."
+              exit 1
+            fi
+          done
+          echo "Publishing:$(for id in $PACKAGES; do printf ' %s' "$id"; done) at $VERSION."
+
+      # A published package has to be debuggable, and Source Link fails silently -- it packs a
+      # perfectly valid nupkg with no commit recorded, which is only discovered by somebody trying
+      # to step into the source months later. 0.1.0 and 0.2.0 shipped that way.
+      - name: Assert the packages record the commit they were built from
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          for id in $PACKAGES; do
+            nuspec=$(unzip -p "artifacts/packages/$id.$VERSION.nupkg" "$id.nuspec")
+            if ! grep -q "commit=\"$GITHUB_SHA\"" <<<"$nuspec"; then
+              echo "::error::$id $VERSION does not record commit $GITHUB_SHA in its nuspec, so Source Link is not working. Check that no project references Microsoft.SourceLink.GitHub explicitly -- doing so replaces the SDK's in-box Source Link and silently disables it."
+              grep -i '<repository' <<<"$nuspec" || echo "  (no repository element at all)"
+              exit 1
+            fi
+            echo "$id records commit $GITHUB_SHA."
+          done
+
+      - name: Publish the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          SUFFIX: ${{ steps.version.outputs.suffix }}
         run: |
-          gh release create "v${{ steps.version.outputs.version }}" \
-            --title "v${{ steps.version.outputs.version }}" \
-            --notes-file .github/release-notes/v${{ steps.version.outputs.version }}.md \
-            --verify-tag \
+          set -euo pipefail
+          notes=".github/release-notes/v$VERSION.md"
+          if [ ! -f "$notes" ]; then
+            echo "::error::No release notes at $notes. Every release is written up before it ships."
+            exit 1
+          fi
+          args=(--title "v$VERSION" --notes-file "$notes" --verify-tag)
+          if [ -n "$SUFFIX" ]; then
+            args+=(--prerelease)
+          fi
+          gh release create "v$VERSION" "${args[@]}" \
             artifacts/packages/*.nupkg \
             artifacts/packages/*.snupkg
 
-      # Nothing is pushed to NuGet yet. When that changes, it belongs here, after the release is
-      # published and gated on a NUGET_API_KEY secret -- a push cannot be taken back, so it should
-      # not be the step that first discovers the packages are wrong.
+      # Requested immediately before the push: the key it returns is valid for one hour.
+      #
+      # Trusted Publishing rather than a stored API key, so there is no long-lived nuget.org
+      # credential in this repository's secrets at all. The policy on nuget.org binds to this
+      # workflow FILE, so renaming release.yml breaks publishing until the policy is updated.
+      - name: NuGet login (OIDC Trusted Publishing)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: jerbersoft
+
+      # One invocation per id, in PACKAGES order, rather than a glob. dotnet nuget push derives each
+      # .snupkg from the .nupkg path it is handed and pushes it after the primary push succeeds, so
+      # symbols need no separate step.
+      - name: Push to nuget.org
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          pushed=""
+          for id in $PACKAGES; do
+            echo "::group::Pushing $id $VERSION"
+            if ! dotnet nuget push "artifacts/packages/$id.$VERSION.nupkg" \
+                   --source https://api.nuget.org/v3/index.json \
+                   --api-key "$NUGET_API_KEY" \
+                   --skip-duplicate; then
+              echo "::endgroup::"
+              echo "::error::Pushing $id $VERSION failed. A 403 naming permission is the Trusted Publishing policy rather than the package: widen it for jerbersoft at https://www.nuget.org/account/trustedpublishing so that it covers $id -- including the new-packages scope if $id has never been published -- then re-run. --skip-duplicate makes the re-run complete rather than abort on what already went out. Published before this failure:${pushed:- nothing}."
+              exit 1
+            fi
+            echo "::endgroup::"
+            pushed="$pushed $id"
+          done
+
+      # A green push exit code is not evidence a version is live: nuget.org validates after the push
+      # returns. This reads the public feed rather than trusting the exit code.
+      - name: Verify both packages reached the feed
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          pending="$PACKAGES"
+          for attempt in $(seq 1 30); do
+            remaining=""
+            for id in $pending; do
+              lower="$(echo "$id" | tr '[:upper:]' '[:lower:]')"
+              if curl -sfL "https://api.nuget.org/v3-flatcontainer/$lower/index.json" -o index.json \
+                 && jq -e --arg v "$VERSION" '.versions | index($v) != null' index.json > /dev/null; then
+                echo "$id $VERSION is live."
+              else
+                remaining="$remaining $id"
+              fi
+            done
+            pending="$(echo "$remaining" | xargs || true)"
+            if [ -z "$pending" ]; then
+              break
+            fi
+            echo "Attempt $attempt/30 -- still waiting for:$pending"
+            sleep 30
+          done
+          if [ -n "$pending" ]; then
+            echo "::error::After 15 minutes these were still not on the feed at $VERSION:$pending. nuget.org validation can lag, so check https://www.nuget.org/profiles/jerbersoft before doing anything else -- once they appear, a re-run is refused as a duplicate."
+            exit 1
+          fi
+          echo "Both packages are live at $VERSION."

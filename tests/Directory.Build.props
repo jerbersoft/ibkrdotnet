@@ -17,6 +17,22 @@
     <NoWarn>$(NoWarn);CS1591;CA1707;CA1034;CA5350</NoWarn>
   </PropertyGroup>
 
+  <!--
+    Test assemblies keep their real source paths.
+
+    Source Link turns on DeterministicSourcePaths under ContinuousIntegrationBuild, which rewrites
+    every embedded path to /_/... so that two machines building the same commit produce identical
+    binaries. That is exactly right for the packages under src/, which ship. It is wrong here:
+    RepositoryLayout and PublicApiApproval find the repository from [CallerFilePath], and a
+    normalised path points at a directory that does not exist. On a CI machine the approval test
+    fails with UnauthorizedAccessException on '/_' rather than on anything to do with the API.
+
+    Nothing in tests/ is published, so there is nothing for determinism to buy here.
+  -->
+  <PropertyGroup>
+    <DeterministicSourcePaths>false</DeterministicSourcePaths>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="NodaTime.Testing" />
