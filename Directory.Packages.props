@@ -24,8 +24,17 @@
     <PackageVersion Include="PublicApiGenerator" Version="11.5.4" />
   </ItemGroup>
 
-  <ItemGroup>
-    <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.400" />
-  </ItemGroup>
+  <!--
+    There is deliberately no Microsoft.SourceLink.GitHub reference here.
+
+    The .NET SDK has carried Source Link in-box since .NET 8 and wires up the GitHub provider on its
+    own. Referencing the package explicitly does not reinforce that — it REPLACES it, and the
+    standalone package does not enable the source-control queries the SDK's copy turns on. The
+    symptom is silent and survives a green build: packages pack, tests pass, and the nuspec simply
+    has no commit attribute while the symbol package has no source URLs, so nobody can step into the
+    source of a published package. It shipped that way in 0.1.0 and 0.2.0.
+
+    PackagingTests asserts this cannot regress unnoticed again.
+  -->
 
 </Project>
