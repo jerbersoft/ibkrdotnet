@@ -9,7 +9,7 @@ A .NET client for the [Interactive Brokers Web API](https://www.interactivebroke
 
 Targets `net10.0`. Every date and time value in the public API is a [NodaTime](https://nodatime.org) type — there is no `DateTime`, `DateTimeOffset` or `TimeSpan` anywhere in it.
 
-**Documentation:** guides and the generated API reference are built from `docs/` — see [Working on this repository](#working-on-this-repository) for how to build and serve them locally. This file is the reference the guides link back to.
+**Documentation: [jerbersoft.github.io/ibkrdotnet](https://jerbersoft.github.io/ibkrdotnet/)** — thirteen guides and the generated API reference for both packages, published from `docs/` on every push to `master`. To build and serve the site locally instead, see [Working on this repository](#working-on-this-repository). This file is the reference the guides link back to.
 
 > **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists, the market scanner, FYIs & notifications, event contracts, alerts and PortfolioAnalyst — 90 of IBKR's 108 Trading endpoints — is implemented. All but ten have been exercised against a live gateway, executions included. The ten are the seven notification writes, which change settings on the username and cannot be undone through the API, and the three alert endpoints that need an alert to already exist — IBKR publishes no endpoint that creates one. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
 
