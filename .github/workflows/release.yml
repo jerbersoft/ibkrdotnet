@@ -22,7 +22,7 @@ jobs:
     name: Pack and publish a release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # Source Link records the commit, so the packages have to be built from the tag itself
           # rather than from whatever the default branch happens to be at the time.
@@ -30,7 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
