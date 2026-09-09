@@ -77,15 +77,17 @@ jobs:
         with:
           path: docs/_site
 
-  # Gated on the PUBLISH_DOCS repository variable, because this repository is private and turning
-  # Pages on would publish its documentation at a public URL. That is a decision to make on purpose,
-  # not a side effect of merging this workflow. To turn it on:
+  # Live at https://jerbersoft.github.io/ibkrdotnet/, deployed from master on every push.
   #
-  #   gh api -X POST repos/jerbersoft/ibkrdotnet/pages -f build_type=workflow
-  #   gh variable set PUBLISH_DOCS --body true
+  # PUBLISH_DOCS was originally a gate: the repository was private, and turning Pages on would have
+  # published its documentation at a public URL, which is a decision to make on purpose rather than
+  # a side effect of merging a workflow. The repository is public and the variable is now set, so
+  # the gate is open. It stays in place as a kill switch -- `gh variable set PUBLISH_DOCS --body
+  # false` stops publishing without reverting anything -- and because a repository whose Pages site
+  # has been turned off should not have this job failing on every push to say so.
   #
-  # Until then the site is still built on every push, which is where the value is: a broken
-  # cross-reference is cheapest to fix at the push that broke it.
+  # The build job above runs regardless, on every branch, which is where most of the value is: a
+  # broken cross-reference is cheapest to fix at the push that broke it.
   #
   # Never from a pull request, and never from a branch. A fork's PR must not be able to publish to
   # the live site, and even a trusted branch should not: what is deployed is what landed on master.
