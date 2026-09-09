@@ -44,7 +44,7 @@ jobs:
       # same compiler — which matters here: DocFX reads the doc comments through the compiler it is
       # given.
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
