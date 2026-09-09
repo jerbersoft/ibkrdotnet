@@ -254,6 +254,17 @@ The PortfolioAnalyst checks read and never write, but they are the slowest thing
 
 No credential is read or printed: the gateway holds the login, and the account identifier is discovered at runtime and masked on the way out, so the output can go straight into a bug report.
 
+## Contributing
+
+See [CONTRIBUTING.md](https://github.com/jerbersoft/ibkrdotnet/blob/master/CONTRIBUTING.md). Every test runs
+offline against recorded fixtures, so a fresh clone goes green with no IBKR account, gateway or key.
+
+## Security
+
+**Do not report a security problem in a public issue.** This is a brokerage client: the material it handles —
+RSA private keys, access-token secrets, live session tokens — is worth more than most. See
+[SECURITY.md](https://github.com/jerbersoft/ibkrdotnet/blob/master/SECURITY.md) for the private channel.
+
 ## License
 
 MIT. See [LICENSE](https://github.com/jerbersoft/ibkrdotnet/blob/master/LICENSE).
