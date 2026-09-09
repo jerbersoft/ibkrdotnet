@@ -35,3 +35,21 @@ Thumbs.db
 docs/_site/
 docs/api/*.yml
 docs/api/.manifest
+
+# Credentials. Both OAuth mechanisms take an RSA private key, and this repository's own README tells
+# you to make one with `openssl genrsa -out privatekey.pem 3072`. That writes into whatever directory
+# you happen to be in, and the repository root is the obvious one — so without these patterns the key
+# sits untracked and unignored, one `git add -A` away from being published permanently. Patterns
+# first, discipline second: the discipline is what fails at 1am.
+#
+# `.env.*` as well as `.env`, because the variants (.env.local, .env.development) are the ones
+# tooling creates without being asked. `.env.example` stays tracked so a template still works.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.jks
+secrets.json

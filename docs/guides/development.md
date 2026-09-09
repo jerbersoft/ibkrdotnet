@@ -124,3 +124,10 @@ word.
 
 Step 6 is the one that finds things. The documentation and the API disagree often enough that a group verified
 only against fixtures should say so.
+
+## Contributing
+
+This page is the build. The process around it — branch naming, the four gates that fail the build, the merge
+policy on `master` — is in
+[CONTRIBUTING.md](https://github.com/jerbersoft/ibkrdotnet/blob/master/CONTRIBUTING.md), and security reporting
+is in [SECURITY.md](https://github.com/jerbersoft/ibkrdotnet/blob/master/SECURITY.md).
