@@ -170,13 +170,26 @@ jobs:
             echo "::error::No release notes at $notes. Every release is written up before it ships."
             exit 1
           fi
-          args=(--title "v$VERSION" --notes-file "$notes" --verify-tag)
-          if [ -n "$SUFFIX" ]; then
-            args+=(--prerelease)
+          # Idempotent, because this step runs BEFORE the push to nuget.org and the push is the
+          # likeliest thing to fail on a first release -- a Trusted Publishing policy that does not
+          # cover a package id yet answers 403. If creating the release were not repeatable, that
+          # failure would block its own retry: the re-run would abort here on "release already
+          # exists" and never reach the push again.
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists -- replacing its assets and leaving it in place."
+            gh release upload "v$VERSION" \
+              artifacts/packages/*.nupkg \
+              artifacts/packages/*.snupkg \
+              --clobber
+          else
+            args=(--title "v$VERSION" --notes-file "$notes" --verify-tag)
+            if [ -n "$SUFFIX" ]; then
+              args+=(--prerelease)
+            fi
+            gh release create "v$VERSION" "${args[@]}" \
+              artifacts/packages/*.nupkg \
+              artifacts/packages/*.snupkg
           fi
-          gh release create "v$VERSION" "${args[@]}" \
-            artifacts/packages/*.nupkg \
-            artifacts/packages/*.snupkg
 
       # Requested immediately before the push: the key it returns is valid for one hour.
       #
