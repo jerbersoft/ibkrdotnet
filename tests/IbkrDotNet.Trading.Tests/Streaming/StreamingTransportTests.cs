@@ -473,6 +473,23 @@ public class StreamingTransportTests
     }
 
     [Fact]
+    public async Task Disposing_synchronously_closes_the_socket_too()
+    {
+        var ct = Within();
+        var harness = new Harness();
+        var subscription = await harness.Transport.SubscribeAsync(IbmTopOfBook, ct);
+        var socket = harness.Socket;
+
+        harness.Transport.Dispose();
+        harness.Transport.Dispose();
+
+        Assert.True(socket.Disposed);
+        Assert.Equal(StreamingConnectionState.Disconnected, harness.Transport.State);
+        Assert.False(await subscription.ReadAllAsync(ct).AnyAsync(ct));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => harness.Transport.ConnectAsync(ct));
+    }
+
+    [Fact]
     public async Task A_subscription_that_cannot_be_opened_is_not_kept()
     {
         var ct = Within();

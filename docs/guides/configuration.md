@@ -34,6 +34,16 @@ services.AddIbkrTrading(configuration.GetSection("Ibkr"))
       "EnforceGlobalLimit": true,
       "MaxWait": "00:00:30",
       "DefaultRetryAfter": "00:00:05"
+    },
+    "Streaming": {
+      "KeepAliveInterval": "00:00:30",
+      "Reconnect": true,
+      "ReconnectDelay": "00:00:01",
+      "ReconnectMaxDelay": "00:00:30",
+      "BufferCapacity": 1,
+      "Overflow": "DropOldest",
+      "CloseTimeout": "00:00:05",
+      "MarketDataRenewalInterval": "00:10:00"
     }
   }
 }
@@ -67,11 +77,22 @@ spend its timeout waiting. [Rate limits](rate-limits.md) explains why that arran
 
 **`RateLimiting`** is covered in full on [its own page](rate-limits.md). The short version: leave it on.
 
+**`Streaming`** configures the WebSocket the streaming topics run over. The defaults need no attention: the
+socket is `/v1/api/ws` under the base address with the scheme swapped to `wss`, so a gateway at
+`https://localhost:5050` is reached at `wss://localhost:5050/v1/api/ws`. `Address` and `Origin` override that
+when the socket lives somewhere else. `KeepAliveInterval` is how often the `tic` topic goes out (IBKR asks for
+one a minute); `Reconnect`, `ReconnectDelay` and `ReconnectMaxDelay` govern reopening a socket that drops;
+`BufferCapacity` and `Overflow` say how many unread messages a subscription holds for a slow consumer and
+which one it discards when full; `CloseTimeout` bounds the close handshake; and `MarketDataRenewalInterval`
+is how often an open market data stream is requested again so it outlives IBKR's fifteen-minute limit.
+`ConfigureClientWebSocket` is a delegate over the `ClientWebSocketOptions` — where the gateway's self-signed
+certificate is trusted, or a proxy set — and so is settable only in code.
+
 ## Validation happens at startup
 
-`AddIbkrTrading` calls `ValidateOnStart`, so a blank `UserAgent`, a non-positive `Timeout` or a negative
-`MaxWait` fails when the host starts rather than at the first request — when a misconfiguration is far more
-expensive to diagnose.
+`AddIbkrTrading` calls `ValidateOnStart`, so a blank `UserAgent`, a non-positive `Timeout`, a negative
+`MaxWait` or a `Streaming` interval that is out of range fails when the host starts rather than at the first
+request — when a misconfiguration is far more expensive to diagnose.
 
 ## Substituting the clock and the time zone provider
 
@@ -84,6 +105,9 @@ services.AddIbkrTrading(...);
 
 Everything time-dependent reads the clock rather than `SystemClock.Instance` directly — token expiry, keep-alive
 scheduling, OAuth nonces, rate-limit windows — so a test can move time without waiting for it.
+
+`IIbkrWebSocketConnector`, which opens the socket for the streaming transport, is registered the same way, so a
+test can substitute one that hands back a scripted `WebSocket` instead of reaching a network.
 
 ## The keep-alive
 

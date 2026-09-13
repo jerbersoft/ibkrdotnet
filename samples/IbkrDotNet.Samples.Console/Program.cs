@@ -47,6 +47,16 @@ if (builder.Configuration.GetValue("TrustGatewayCertificate", defaultValue: fals
             ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
                 errors == SslPolicyErrors.None || request.RequestUri?.IsLoopback is true,
         });
+
+    // The WebSocket upgrade does not go through that handler, so the same loopback-only relaxation
+    // is applied to the socket separately.
+    builder.Services.Configure<IbkrTradingOptions>(o =>
+    {
+        var loopback = o.ResolveBaseAddress().IsLoopback;
+        o.Streaming.ConfigureClientWebSocket = ws =>
+            ws.RemoteCertificateValidationCallback = (_, _, _, errors) =>
+                errors == SslPolicyErrors.None || loopback;
+    });
 }
 
 using var host = builder.Build();

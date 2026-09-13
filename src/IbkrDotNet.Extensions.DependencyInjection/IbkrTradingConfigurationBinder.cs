@@ -63,6 +63,68 @@ internal static class IbkrTradingConfigurationBinder
                 options.RateLimiting.DefaultRetryAfter = defaultRetryAfter;
             }
         }
+
+        var streaming = configuration.GetSection("Streaming");
+        if (streaming.Exists())
+        {
+            BindStreaming(options.Streaming, streaming);
+        }
+    }
+
+    private static void BindStreaming(IbkrStreamingOptions options, IConfiguration configuration)
+    {
+        if (configuration["Address"] is { Length: > 0 } address)
+        {
+            options.Address = Uri.TryCreate(address, UriKind.Absolute, out var uri)
+                ? uri
+                : throw new InvalidOperationException(
+                    $"'{address}' is not a valid absolute URI for Streaming.{nameof(IbkrStreamingOptions.Address)}.");
+        }
+
+        if (configuration["Origin"] is { Length: > 0 } origin)
+        {
+            options.Origin = origin;
+        }
+
+        if (TryParseDuration(configuration["KeepAliveInterval"], out var keepAliveInterval))
+        {
+            options.KeepAliveInterval = keepAliveInterval;
+        }
+
+        if (bool.TryParse(configuration["Reconnect"], out var reconnect))
+        {
+            options.Reconnect = reconnect;
+        }
+
+        if (TryParseDuration(configuration["ReconnectDelay"], out var reconnectDelay))
+        {
+            options.ReconnectDelay = reconnectDelay;
+        }
+
+        if (TryParseDuration(configuration["ReconnectMaxDelay"], out var reconnectMaxDelay))
+        {
+            options.ReconnectMaxDelay = reconnectMaxDelay;
+        }
+
+        if (int.TryParse(configuration["BufferCapacity"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var bufferCapacity))
+        {
+            options.BufferCapacity = bufferCapacity;
+        }
+
+        if (Enum.TryParse<StreamingOverflowMode>(configuration["Overflow"], ignoreCase: true, out var overflow))
+        {
+            options.Overflow = overflow;
+        }
+
+        if (TryParseDuration(configuration["CloseTimeout"], out var closeTimeout))
+        {
+            options.CloseTimeout = closeTimeout;
+        }
+
+        if (TryParseDuration(configuration["MarketDataRenewalInterval"], out var renewalInterval))
+        {
+            options.MarketDataRenewalInterval = renewalInterval;
+        }
     }
 
     /// <summary>
