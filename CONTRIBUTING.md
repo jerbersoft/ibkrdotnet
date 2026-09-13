@@ -36,7 +36,7 @@ API reference under `docs/api/*.yml` is git-ignored, so `build` alone produces a
 5. Merge once they are:
 
 ```bash
-gh pr merge <number> --squash --delete-branch
+gh pr merge <number> --rebase --delete-branch
 ```
 
 `master` requires a pull request, both named checks, a branch that is up to date, resolved review conversations
