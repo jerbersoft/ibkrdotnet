@@ -8,6 +8,7 @@ using IbkrDotNet.Trading.Clients;
 using IbkrDotNet.Trading.Configuration;
 using IbkrDotNet.Trading.Http;
 using IbkrDotNet.Trading.Session;
+using IbkrDotNet.Trading.Streaming;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -46,6 +47,9 @@ public class ServiceRegistrationTests
     [InlineData(typeof(IEventContractsClient))]
     [InlineData(typeof(IAlertsClient))]
     [InlineData(typeof(IPortfolioAnalystClient))]
+    [InlineData(typeof(IIbkrStreamingTransport))]
+    [InlineData(typeof(IMarketDataStreamClient))]
+    [InlineData(typeof(IIbkrWebSocketConnector))]
     [InlineData(typeof(IClock))]
     [InlineData(typeof(IDateTimeZoneProvider))]
     [InlineData(typeof(IbkrSessionState))]
@@ -66,6 +70,8 @@ public class ServiceRegistrationTests
         Assert.Same(provider.GetRequiredService<IOrdersClient>(), client.Orders);
         Assert.Same(provider.GetRequiredService<IPortfolioClient>(), client.Portfolio);
         Assert.Same(provider.GetRequiredService<IIbkrSessionManager>(), client.Session);
+        Assert.Same(provider.GetRequiredService<IIbkrStreamingTransport>(), client.Streaming);
+        Assert.Same(provider.GetRequiredService<IMarketDataStreamClient>(), client.MarketDataStream);
     }
 
     [Fact]
@@ -268,5 +274,55 @@ public class ConfigurationBindingTests
             () => Bind(new Dictionary<string, string?> { ["BaseAddress"] = "not a uri" }));
 
         Assert.Contains("BaseAddress", ex.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Binds_the_documented_streaming_keys()
+    {
+        var options = Bind(new Dictionary<string, string?>
+        {
+            ["Streaming:Address"] = "wss://localhost:5001/v1/api/ws",
+            ["Streaming:Origin"] = "https://localhost:5001",
+            ["Streaming:KeepAliveInterval"] = "00:00:45",
+            ["Streaming:Reconnect"] = "false",
+            ["Streaming:ReconnectDelay"] = "2",
+            ["Streaming:ReconnectMaxDelay"] = "00:01:00",
+            ["Streaming:BufferCapacity"] = "16",
+            ["Streaming:Overflow"] = "dropNewest",
+            ["Streaming:CloseTimeout"] = "00:00:10",
+            ["Streaming:MarketDataRenewalInterval"] = "00:09:00",
+        });
+
+        var streaming = options.Streaming;
+        Assert.Equal(new Uri("wss://localhost:5001/v1/api/ws"), streaming.Address);
+        Assert.Equal("https://localhost:5001", streaming.Origin);
+        Assert.Equal(Duration.FromSeconds(45), streaming.KeepAliveInterval);
+        Assert.False(streaming.Reconnect);
+        Assert.Equal(Duration.FromSeconds(2), streaming.ReconnectDelay);
+        Assert.Equal(Duration.FromMinutes(1), streaming.ReconnectMaxDelay);
+        Assert.Equal(16, streaming.BufferCapacity);
+        Assert.Equal(StreamingOverflowMode.DropNewest, streaming.Overflow);
+        Assert.Equal(Duration.FromSeconds(10), streaming.CloseTimeout);
+        Assert.Equal(Duration.FromMinutes(9), streaming.MarketDataRenewalInterval);
+    }
+
+    [Fact]
+    public void Leaves_the_streaming_defaults_alone_for_keys_that_are_absent()
+    {
+        var options = Bind(new Dictionary<string, string?> { ["Streaming:Reconnect"] = "true" });
+
+        Assert.Null(options.Streaming.Address);
+        Assert.Equal(Duration.FromSeconds(30), options.Streaming.KeepAliveInterval);
+        Assert.Equal(1, options.Streaming.BufferCapacity);
+        Assert.Equal(StreamingOverflowMode.DropOldest, options.Streaming.Overflow);
+    }
+
+    [Fact]
+    public void Rejects_a_streaming_address_that_is_not_a_uri()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(
+            () => Bind(new Dictionary<string, string?> { ["Streaming:Address"] = "not a uri" }));
+
+        Assert.Contains("Streaming.Address", ex.Message, StringComparison.Ordinal);
     }
 }

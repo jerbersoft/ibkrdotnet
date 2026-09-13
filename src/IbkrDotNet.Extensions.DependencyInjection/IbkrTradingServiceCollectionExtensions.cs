@@ -5,9 +5,12 @@ using IbkrDotNet.Trading.Configuration;
 using IbkrDotNet.Trading.Http;
 using IbkrDotNet.Trading.Http.RateLimiting;
 using IbkrDotNet.Trading.Session;
+using IbkrDotNet.Trading.Streaming;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NodaTime;
 
 namespace IbkrDotNet.Extensions.DependencyInjection;
@@ -18,7 +21,8 @@ namespace IbkrDotNet.Extensions.DependencyInjection;
 public static class IbkrTradingServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers the Trading client, its endpoint clients and its HTTP pipeline.
+    /// Registers the Trading client, its endpoint clients, its HTTP pipeline and the WebSocket
+    /// transport the streaming topics run over.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configure">Configures the client options.</param>
@@ -58,6 +62,11 @@ public static class IbkrTradingServiceCollectionExtensions
             // expensive to diagnose.
             .ValidateOnStart();
 
+        // The streaming options carry their own rules, shared with the transport's constructor, so
+        // they are run as a validator rather than restated here.
+        services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IValidateOptions<IbkrTradingOptions>, IbkrStreamingOptionsValidator>());
+
         // Registered with TryAdd so a host can substitute a FakeClock or a fixed zone provider.
         services.TryAddSingleton<IClock>(SystemClock.Instance);
         services.TryAddSingleton(DateTimeZoneProviders.Tzdb);
@@ -88,7 +97,7 @@ public static class IbkrTradingServiceCollectionExtensions
             return new IbkrApiClient(
                 () => factory.CreateClient(IbkrApiClient.HttpClientName),
                 provider.GetRequiredService<IbkrRateLimiterRegistry>(),
-                provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<IbkrApiClient>>());
+                provider.GetRequiredService<ILogger<IbkrApiClient>>());
         });
 
         services.TryAddSingleton<ISessionClient, SessionClient>();
@@ -104,6 +113,21 @@ public static class IbkrTradingServiceCollectionExtensions
         services.TryAddSingleton<IAlertsClient, AlertsClient>();
         services.TryAddSingleton<IPortfolioAnalystClient, PortfolioAnalystClient>();
         services.TryAddSingleton<IIbkrSessionManager, IbkrSessionManager>();
+
+        // One socket per session, shared by every streaming topic, and opened only when a stream is
+        // first read. The connector is its own registration so a host, or a test, can substitute one
+        // that opens no network socket. Disposing the container closes the socket.
+        services.TryAddSingleton<IIbkrWebSocketConnector>(ClientWebSocketConnector.Instance);
+        services.TryAddSingleton<IIbkrStreamingTransport>(provider => new IbkrStreamingTransport(
+            provider.GetRequiredService<IIbkrSessionManager>(),
+            provider.GetRequiredService<IbkrSessionState>(),
+            provider.GetRequiredService<IIbkrAuthenticator>(),
+            provider.GetRequiredService<IIbkrWebSocketConnector>(),
+            provider.GetRequiredService<IOptions<IbkrTradingOptions>>(),
+            provider.GetRequiredService<IClock>(),
+            provider.GetRequiredService<ILogger<IbkrStreamingTransport>>()));
+        services.TryAddSingleton<IMarketDataStreamClient, MarketDataStreamClient>();
+
         services.TryAddSingleton<IIbkrTradingClient, IbkrTradingClient>();
 
         return new IbkrTradingBuilder(services);
@@ -127,6 +151,18 @@ public static class IbkrTradingServiceCollectionExtensions
     ///     "EnforceGlobalLimit": true,
     ///     "MaxWait": "00:00:30",
     ///     "DefaultRetryAfter": "00:00:05"
+    ///   },
+    ///   "Streaming": {
+    ///     "Address": "wss://localhost:5001/v1/api/ws",
+    ///     "Origin": "https://localhost:5001",
+    ///     "KeepAliveInterval": "00:00:30",
+    ///     "Reconnect": true,
+    ///     "ReconnectDelay": "00:00:01",
+    ///     "ReconnectMaxDelay": "00:00:30",
+    ///     "BufferCapacity": 1,
+    ///     "Overflow": "DropOldest",              // or DropNewest
+    ///     "CloseTimeout": "00:00:05",
+    ///     "MarketDataRenewalInterval": "00:10:00"
     ///   }
     /// }
     /// </code>
@@ -134,6 +170,10 @@ public static class IbkrTradingServiceCollectionExtensions
     /// Durations accept a <c>TimeSpan</c> string, NodaTime's round-trip form, or a whole number of
     /// seconds. They are bound explicitly rather than by reflection because
     /// <see cref="Duration"/> is not a type the configuration binder can construct.
+    /// </para>
+    /// <para>
+    /// <c>Streaming.ConfigureClientWebSocket</c> is a delegate and cannot come from configuration;
+    /// set it in code through the other overload or <c>services.Configure&lt;IbkrTradingOptions&gt;</c>.
     /// </para>
     /// </remarks>
     public static IIbkrTradingBuilder AddIbkrTrading(
@@ -148,9 +188,7 @@ public static class IbkrTradingServiceCollectionExtensions
 
     private static void ConfigureHttpClient(IServiceProvider provider, HttpClient client)
     {
-        var options = provider
-            .GetRequiredService<Microsoft.Extensions.Options.IOptions<IbkrTradingOptions>>()
-            .Value;
+        var options = provider.GetRequiredService<IOptions<IbkrTradingOptions>>().Value;
 
         client.BaseAddress = options.ResolveBaseAddress();
         client.Timeout = options.Timeout.ToTimeSpan();

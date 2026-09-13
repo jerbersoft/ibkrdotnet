@@ -20,8 +20,9 @@
 // identifier, read back and deleted again, and the identifier is checked against the existing lists
 // first so nothing the user made is displaced.
 //
-// The streaming checks open the WebSocket, read what IBKR sends on connect, ping it, wait for a
-// heartbeat and close it. No topic is subscribed; the transport is what is being verified.
+// The streaming checks open the WebSocket, read what IBKR sends on connect, ping it, stream one
+// market data message for the contract the read-only checks found, wait for a heartbeat and close
+// it. That first message is printed in full so it can be kept as a fixture.
 //
 // No credential is read, stored or printed here. The gateway holds the login and this talks to it
 // over loopback, so there is nothing to configure and nothing to leak. The account identifier is
@@ -32,19 +33,14 @@ using System.Net.Security;
 using IbkrDotNet.Extensions.DependencyInjection;
 using IbkrDotNet.Samples.Verify;
 using IbkrDotNet.Trading;
-using IbkrDotNet.Trading.Authentication;
-using IbkrDotNet.Trading.Clients;
 using IbkrDotNet.Trading.Configuration;
 using IbkrDotNet.Trading.Http;
 using IbkrDotNet.Trading.Primitives;
-using IbkrDotNet.Trading.Session;
-using IbkrDotNet.Trading.Streaming;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using NodaTime;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -119,22 +115,7 @@ Console.WriteLine($"Account: {Mask(account)}");
 var probe = new Probe(account.Value, Mask(account));
 var context = await ReadOnlyChecks.RunAsync(ibkr, probe, account, cancellationToken);
 
-// Built by hand until the dependency injection package registers it.
-await using (var streaming = new IbkrStreamingTransport(
-    host.Services.GetRequiredService<IIbkrSessionManager>(),
-    host.Services.GetRequiredService<IbkrSessionState>(),
-    host.Services.GetRequiredService<IIbkrAuthenticator>(),
-    host.Services.GetRequiredService<IOptions<IbkrTradingOptions>>(),
-    host.Services.GetRequiredService<IClock>(),
-    host.Services.GetRequiredService<ILogger<IbkrStreamingTransport>>()))
-{
-    var marketDataStream = new MarketDataStreamClient(
-        streaming,
-        host.Services.GetRequiredService<IOptions<IbkrTradingOptions>>(),
-        host.Services.GetRequiredService<ILogger<MarketDataStreamClient>>());
-    await StreamingChecks.RunAsync(streaming, marketDataStream, context.ConId, probe, cancellationToken);
-}
-
+await StreamingChecks.RunAsync(ibkr.Streaming, ibkr.MarketDataStream, context.ConId, probe, cancellationToken);
 await WatchlistChecks.RunAsync(ibkr, probe, context, cancellationToken);
 await ScannerChecks.RunAsync(ibkr, probe, cancellationToken);
 await NotificationChecks.RunAsync(ibkr, probe, cancellationToken);

@@ -583,6 +583,7 @@ namespace IbkrDotNet.Trading
         IbkrDotNet.Trading.Clients.IContractsClient Contracts { get; }
         IbkrDotNet.Trading.Clients.IEventContractsClient EventContracts { get; }
         IbkrDotNet.Trading.Clients.IMarketDataClient MarketData { get; }
+        IbkrDotNet.Trading.Clients.IMarketDataStreamClient MarketDataStream { get; }
         IbkrDotNet.Trading.Clients.INotificationsClient Notifications { get; }
         IbkrDotNet.Trading.Clients.IOrdersClient Orders { get; }
         IbkrDotNet.Trading.Clients.IPortfolioClient Portfolio { get; }
@@ -590,16 +591,18 @@ namespace IbkrDotNet.Trading
         IbkrDotNet.Trading.Clients.IScannerClient Scanner { get; }
         IbkrDotNet.Trading.Session.IIbkrSessionManager Session { get; }
         IbkrDotNet.Trading.Clients.ISessionClient Sessions { get; }
+        IbkrDotNet.Trading.Streaming.IIbkrStreamingTransport Streaming { get; }
         IbkrDotNet.Trading.Clients.IWatchlistsClient Watchlists { get; }
     }
     public sealed class IbkrTradingClient : IbkrDotNet.Trading.IIbkrTradingClient
     {
-        public IbkrTradingClient(IbkrDotNet.Trading.Session.IIbkrSessionManager session, IbkrDotNet.Trading.Clients.ISessionClient sessions, IbkrDotNet.Trading.Clients.IAccountsClient accounts, IbkrDotNet.Trading.Clients.IPortfolioClient portfolio, IbkrDotNet.Trading.Clients.IContractsClient contracts, IbkrDotNet.Trading.Clients.IOrdersClient orders, IbkrDotNet.Trading.Clients.IMarketDataClient marketData, IbkrDotNet.Trading.Clients.IWatchlistsClient watchlists, IbkrDotNet.Trading.Clients.IScannerClient scanner, IbkrDotNet.Trading.Clients.INotificationsClient notifications, IbkrDotNet.Trading.Clients.IEventContractsClient eventContracts, IbkrDotNet.Trading.Clients.IAlertsClient alerts, IbkrDotNet.Trading.Clients.IPortfolioAnalystClient portfolioAnalyst) { }
+        public IbkrTradingClient(IbkrDotNet.Trading.Session.IIbkrSessionManager session, IbkrDotNet.Trading.Clients.ISessionClient sessions, IbkrDotNet.Trading.Clients.IAccountsClient accounts, IbkrDotNet.Trading.Clients.IPortfolioClient portfolio, IbkrDotNet.Trading.Clients.IContractsClient contracts, IbkrDotNet.Trading.Clients.IOrdersClient orders, IbkrDotNet.Trading.Clients.IMarketDataClient marketData, IbkrDotNet.Trading.Clients.IWatchlistsClient watchlists, IbkrDotNet.Trading.Clients.IScannerClient scanner, IbkrDotNet.Trading.Clients.INotificationsClient notifications, IbkrDotNet.Trading.Clients.IEventContractsClient eventContracts, IbkrDotNet.Trading.Clients.IAlertsClient alerts, IbkrDotNet.Trading.Clients.IPortfolioAnalystClient portfolioAnalyst, IbkrDotNet.Trading.Streaming.IIbkrStreamingTransport streaming, IbkrDotNet.Trading.Clients.IMarketDataStreamClient marketDataStream) { }
         public IbkrDotNet.Trading.Clients.IAccountsClient Accounts { get; }
         public IbkrDotNet.Trading.Clients.IAlertsClient Alerts { get; }
         public IbkrDotNet.Trading.Clients.IContractsClient Contracts { get; }
         public IbkrDotNet.Trading.Clients.IEventContractsClient EventContracts { get; }
         public IbkrDotNet.Trading.Clients.IMarketDataClient MarketData { get; }
+        public IbkrDotNet.Trading.Clients.IMarketDataStreamClient MarketDataStream { get; }
         public IbkrDotNet.Trading.Clients.INotificationsClient Notifications { get; }
         public IbkrDotNet.Trading.Clients.IOrdersClient Orders { get; }
         public IbkrDotNet.Trading.Clients.IPortfolioClient Portfolio { get; }
@@ -607,6 +610,7 @@ namespace IbkrDotNet.Trading
         public IbkrDotNet.Trading.Clients.IScannerClient Scanner { get; }
         public IbkrDotNet.Trading.Session.IIbkrSessionManager Session { get; }
         public IbkrDotNet.Trading.Clients.ISessionClient Sessions { get; }
+        public IbkrDotNet.Trading.Streaming.IIbkrStreamingTransport Streaming { get; }
         public IbkrDotNet.Trading.Clients.IWatchlistsClient Watchlists { get; }
     }
 }
@@ -3708,7 +3712,7 @@ namespace IbkrDotNet.Trading.Streaming
         public IbkrStreamingException(string message) { }
         public IbkrStreamingException(string message, System.Exception innerException) { }
     }
-    public sealed class IbkrStreamingTransport : IbkrDotNet.Trading.Streaming.IIbkrStreamingTransport, System.IAsyncDisposable
+    public sealed class IbkrStreamingTransport : IbkrDotNet.Trading.Streaming.IIbkrStreamingTransport, System.IAsyncDisposable, System.IDisposable
     {
         public IbkrStreamingTransport(IbkrDotNet.Trading.Session.IIbkrSessionManager sessionManager, IbkrDotNet.Trading.Authentication.IbkrSessionState sessionState, IbkrDotNet.Trading.Authentication.IIbkrAuthenticator authenticator, Microsoft.Extensions.Options.IOptions<IbkrDotNet.Trading.Configuration.IbkrTradingOptions> options, NodaTime.IClock clock, Microsoft.Extensions.Logging.ILogger<IbkrDotNet.Trading.Streaming.IbkrStreamingTransport> logger) { }
         public IbkrStreamingTransport(IbkrDotNet.Trading.Session.IIbkrSessionManager sessionManager, IbkrDotNet.Trading.Authentication.IbkrSessionState sessionState, IbkrDotNet.Trading.Authentication.IIbkrAuthenticator authenticator, IbkrDotNet.Trading.Streaming.IIbkrWebSocketConnector connector, Microsoft.Extensions.Options.IOptions<IbkrDotNet.Trading.Configuration.IbkrTradingOptions> options, NodaTime.IClock clock, Microsoft.Extensions.Logging.ILogger<IbkrDotNet.Trading.Streaming.IbkrStreamingTransport> logger) { }
@@ -3717,6 +3721,7 @@ namespace IbkrDotNet.Trading.Streaming
         public IbkrDotNet.Trading.Streaming.StreamingConnectionState State { get; }
         public System.Threading.Tasks.Task CloseAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task ConnectAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public void Dispose() { }
         public System.Threading.Tasks.ValueTask DisposeAsync() { }
         public System.Threading.Tasks.Task SendAsync(string frame, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task<IbkrDotNet.Trading.Streaming.StreamingSubscription> SubscribeAsync(IbkrDotNet.Trading.Streaming.StreamingSubscriptionRequest request, System.Threading.CancellationToken cancellationToken = default) { }

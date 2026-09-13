@@ -1,5 +1,6 @@
 using IbkrDotNet.Trading.Clients;
 using IbkrDotNet.Trading.Session;
+using IbkrDotNet.Trading.Streaming;
 
 namespace IbkrDotNet.Trading;
 
@@ -50,6 +51,20 @@ public interface IIbkrTradingClient
 
     /// <summary>The PortfolioAnalyst endpoints.</summary>
     IPortfolioAnalystClient PortfolioAnalyst { get; }
+
+    /// <summary>
+    /// The WebSocket transport the streaming topics run over: its state, and opening and closing it
+    /// by hand.
+    /// </summary>
+    /// <remarks>
+    /// Nothing opens the socket until a stream is read, so an application that only calls the REST
+    /// endpoints never pays for one. A topic this library has not modelled is reached through
+    /// <see cref="IIbkrStreamingTransport.SubscribeAsync"/>.
+    /// </remarks>
+    IIbkrStreamingTransport Streaming { get; }
+
+    /// <summary>The streaming market data topics, over <see cref="Streaming"/>.</summary>
+    IMarketDataStreamClient MarketDataStream { get; }
 }
 
 /// <inheritdoc cref="IIbkrTradingClient" />
@@ -69,6 +84,8 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
     /// <param name="eventContracts">The event contract client.</param>
     /// <param name="alerts">The alerts client.</param>
     /// <param name="portfolioAnalyst">The PortfolioAnalyst client.</param>
+    /// <param name="streaming">The WebSocket transport.</param>
+    /// <param name="marketDataStream">The streaming market data client.</param>
     public IbkrTradingClient(
         IIbkrSessionManager session,
         ISessionClient sessions,
@@ -82,7 +99,9 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         INotificationsClient notifications,
         IEventContractsClient eventContracts,
         IAlertsClient alerts,
-        IPortfolioAnalystClient portfolioAnalyst)
+        IPortfolioAnalystClient portfolioAnalyst,
+        IIbkrStreamingTransport streaming,
+        IMarketDataStreamClient marketDataStream)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(sessions);
@@ -97,6 +116,8 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         ArgumentNullException.ThrowIfNull(eventContracts);
         ArgumentNullException.ThrowIfNull(alerts);
         ArgumentNullException.ThrowIfNull(portfolioAnalyst);
+        ArgumentNullException.ThrowIfNull(streaming);
+        ArgumentNullException.ThrowIfNull(marketDataStream);
 
         Session = session;
         Sessions = sessions;
@@ -111,6 +132,8 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
         EventContracts = eventContracts;
         Alerts = alerts;
         PortfolioAnalyst = portfolioAnalyst;
+        Streaming = streaming;
+        MarketDataStream = marketDataStream;
     }
 
     /// <inheritdoc />
@@ -151,4 +174,10 @@ public sealed class IbkrTradingClient : IIbkrTradingClient
 
     /// <inheritdoc />
     public IPortfolioAnalystClient PortfolioAnalyst { get; }
+
+    /// <inheritdoc />
+    public IIbkrStreamingTransport Streaming { get; }
+
+    /// <inheritdoc />
+    public IMarketDataStreamClient MarketDataStream { get; }
 }

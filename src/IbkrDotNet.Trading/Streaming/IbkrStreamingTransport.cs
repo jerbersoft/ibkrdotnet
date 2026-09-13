@@ -31,11 +31,11 @@ namespace IbkrDotNet.Trading.Streaming;
 /// frames to replay.
 /// </para>
 /// <para>
-/// Register it as a singleton. It holds the one socket the session gets, and every topic client
-/// shares it.
+/// Register it as a singleton, as <c>AddIbkrTrading</c> in <c>IbkrDotNet.Extensions.DependencyInjection</c>
+/// does. It holds the one socket the session gets, and every topic client shares it.
 /// </para>
 /// </remarks>
-public sealed class IbkrStreamingTransport : IIbkrStreamingTransport
+public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposable
 {
     private const int ReceiveChunkSize = 16 * 1024;
     private const string SessionCookiePrefix = "api=";
@@ -280,6 +280,17 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport
         _connectGate.Dispose();
         _sendGate.Dispose();
     }
+
+    /// <summary>
+    /// Closes the socket and releases the transport, blocking until the close handshake completes or
+    /// <see cref="IbkrStreamingOptions.CloseTimeout"/> elapses.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="DisposeAsync"/> is the one to call. This exists for a container that is disposed
+    /// synchronously, which would otherwise refuse to dispose a service that only supports
+    /// <see cref="IAsyncDisposable"/>; a host disposes asynchronously and never comes here.
+    /// </remarks>
+    public void Dispose() => DisposeAsync().AsTask().GetAwaiter().GetResult();
 
     private async Task OpenAsync(StreamingConnectionState onFailure, CancellationToken cancellationToken)
     {
