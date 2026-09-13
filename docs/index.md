@@ -51,11 +51,12 @@ Two packages. `IbkrDotNet.Extensions.DependencyInjection` is the registration su
 `IbkrDotNet.Trading`, the client, with it. A consumer with a container of its own can reference the client alone.
 
 ```sh
-dotnet add package IbkrDotNet.Extensions.DependencyInjection
+dotnet add package IbkrDotNet.Extensions.DependencyInjection --prerelease
 ```
 
-> **Not on nuget.org yet.** Both packages build and pack from this repository; publishing is deliberately
-> deferred. Until then, `dotnet pack` and a local feed, or a project reference.
+> **Prerelease.** Every version before `1.0.0` is published to nuget.org as a prerelease while the public API
+> settles, so `--prerelease` is required. A version reaches the feed only when it is tagged; there is no nightly
+> stream.
 
 ## The four things worth knowing up front
 

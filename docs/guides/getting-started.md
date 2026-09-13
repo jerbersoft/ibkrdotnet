@@ -36,13 +36,14 @@ it holds the session, and this library talks to it rather than to IBKR.
 ## Install
 
 ```sh
-dotnet add package IbkrDotNet.Extensions.DependencyInjection
+dotnet add package IbkrDotNet.Extensions.DependencyInjection --prerelease
 ```
 
 That package is the registration surface and brings `IbkrDotNet.Trading` with it. A consumer with a container of
 its own can reference `IbkrDotNet.Trading` alone and construct the clients directly.
 
-> **Not on nuget.org yet.** Until it is, `dotnet pack` into a local feed, or reference the projects.
+> **Prerelease.** Every version before `1.0.0` is published as a prerelease while the public API settles, so
+> `--prerelease` is required; without it `dotnet add package` finds no stable version and says so.
 
 ## Register the client
 
