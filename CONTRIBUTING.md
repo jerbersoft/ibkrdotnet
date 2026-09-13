@@ -45,6 +45,41 @@ solo maintainer cannot approve their own pull request, and a rule that can only 
 trains an override that skips the required checks too. Restore the review requirement the day a second
 maintainer can supply one.
 
+## Cutting a release
+
+Releases are tag-driven. Nothing reaches nuget.org except through a `v*` tag, so a version is on the feed only
+because somebody tagged it; there is no nightly or CI prerelease stream.
+
+1. In one pull request, bump `<VersionPrefix>` in `Directory.Build.props` to the version's `major.minor.patch`
+   half and write `.github/release-notes/v<version>.md`, the text of the GitHub Release. The workflow refuses
+   a tag whose prefix disagrees with the file — a version nobody can trace back to a commit is permanent — and
+   refuses to publish without the notes, so both have to be on `master` first.
+2. Tag the merge commit and push the tag. The tag carries the whole version, suffix included: `v0.4.0-preview.1`
+   publishes `0.4.0-preview.1` and marks the GitHub Release as a prerelease, `v0.4.0` would publish a stable
+   version.
+
+   ```bash
+   git tag -a v0.4.0-preview.1 <commit> -m "v0.4.0-preview.1"
+   git push origin v0.4.0-preview.1
+   ```
+
+3. Watch the run. It builds from the tag, tests, packs, checks that both nuspecs record the commit they were
+   built from, publishes the GitHub Release with the packages attached, pushes the core package before the one
+   that depends on it, and then polls the public feed until both versions are live — a green push is not
+   evidence that they are, because nuget.org validates after it returns. The push uses
+   [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) over OIDC, so there is
+   no nuget.org key in the repository's secrets.
+
+The tag push is the irreversible step. A version on nuget.org can be unlisted but never deleted or replaced, and
+its packed README is whatever `README.md` said at the tag. Every version before `1.0.0` carries a prerelease
+suffix while the public API settles. The workflow runs only on a tag, so any change to it is first tested by the
+next release; prove one with a prerelease tag rather than a stable one.
+
+A run that fails partway can be re-run: the GitHub Release step is idempotent and the push passes over what
+already went out. A `403` naming permission is the Trusted Publishing policy on nuget.org rather than the
+package. The policy binds to the workflow file by name, so renaming `release.yml` breaks publishing until it is
+updated.
+
 ## Four gates that fail the build
 
 Each of these exists because the alternative is a defect that hides rather than fails.

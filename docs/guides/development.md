@@ -41,8 +41,8 @@ verifying an endpoint model. It is deliberately not vendored.
 
 ## The console tour
 
-Read-only, against a locally running gateway: session status, accounts, balances, a quote, daily bars and an order
-*preview*. It never places a live order.
+Read-only, against a locally running gateway: session status, accounts, balances, a quote, a few seconds of the
+same quote streamed over the WebSocket, daily bars and an order *preview*. It never places a live order.
 
 ```sh
 dotnet run --project samples/IbkrDotNet.Samples.Console -- \
@@ -87,6 +87,13 @@ saying how much of it is left. Two of the four re-prove claims the library docum
 that `lastSuccessfulUpdate` is UTC, and that `nd` counts calendar days rather than data points — so a comment that
 drifts away from the API is caught by a run instead of by a caller.
 
+**Streaming checks** open the WebSocket, read the `system` confirmation and the `sts` status IBKR sends on
+connect, send `tic`, stream the contract the read-only checks found until its first `smd` message, wait for a
+heartbeat and close the socket. That first message is printed in full — it carries no account data — so it can be
+kept as `market-data-response.live.json` beside the documented fixture, which is the capture the library still
+lacks. `--TrustGatewayCertificate` is applied to the upgrade request separately from the HTTP handler, and
+loopback-only in both places.
+
 No credential is read or printed. The gateway holds the login, and the account identifier is discovered at runtime
 and masked on the way out, so the output can go straight into a bug report.
 
@@ -128,6 +135,6 @@ only against fixtures should say so.
 ## Contributing
 
 This page is the build. The process around it — branch naming, the four gates that fail the build, the merge
-policy on `master` — is in
+policy on `master`, how a release is cut — is in
 [CONTRIBUTING.md](https://github.com/jerbersoft/ibkrdotnet/blob/master/CONTRIBUTING.md), and security reporting
 is in [SECURITY.md](https://github.com/jerbersoft/ibkrdotnet/blob/master/SECURITY.md).
