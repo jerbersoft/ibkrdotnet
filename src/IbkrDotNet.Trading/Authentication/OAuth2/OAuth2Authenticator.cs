@@ -83,6 +83,11 @@ public sealed class OAuth2Authenticator : IIbkrAuthenticator, IDisposable
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
+    /// <inheritdoc />
+    /// <remarks>The SSO session token, the same value the <c>Bearer</c> header carries.</remarks>
+    public async ValueTask<StreamingCredential?> GetStreamingCredentialAsync(CancellationToken cancellationToken) =>
+        new StreamingCredential("bearer_token", await GetSessionTokenAsync(cancellationToken).ConfigureAwait(false));
+
     /// <summary>
     /// Discards the cached SSO session token so the next request establishes a new session.
     /// </summary>

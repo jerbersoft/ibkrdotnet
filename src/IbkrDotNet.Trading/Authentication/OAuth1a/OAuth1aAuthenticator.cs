@@ -119,6 +119,14 @@ public sealed class OAuth1aAuthenticator : IIbkrAuthenticator, IDisposable
         }
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// The permanent access token, not the live session token: IBKR identifies the socket by the
+    /// former, and the latter has already signed the <c>/tickle</c> that produced the session cookie.
+    /// </remarks>
+    public ValueTask<StreamingCredential?> GetStreamingCredentialAsync(CancellationToken cancellationToken) =>
+        ValueTask.FromResult<StreamingCredential?>(new StreamingCredential("oauth_token", _options.AccessToken));
+
     /// <summary>Discards the live session token so the next request repeats the handshake.</summary>
     public void Invalidate()
     {
