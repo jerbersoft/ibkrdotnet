@@ -88,7 +88,8 @@ rest are read through the transport. [Endpoint coverage](endpoint-coverage.md).
 
 ## Is it on nuget.org?
 
-Not yet. Both packages build and pack from the repository; publishing is deliberately deferred.
+Yes, as a prerelease. Every version before `1.0.0` carries a prerelease suffix while the public API settles, so
+`dotnet add package` needs `--prerelease`. A version reaches the feed only when it is tagged.
 
 ## Which .NET version?
 
