@@ -248,6 +248,10 @@ namespace IbkrDotNet.Trading.Clients
         System.Threading.Tasks.Task<IbkrDotNet.Trading.Models.MarketData.UnsubscribeAllResponse> UnsubscribeAllAsync(System.Threading.CancellationToken cancellationToken = default);
         System.Threading.Tasks.Task<IbkrDotNet.Trading.Models.MarketData.UnsubscribeResponse> UnsubscribeAsync(IbkrDotNet.Trading.Primitives.ConId conId, System.Threading.CancellationToken cancellationToken = default);
     }
+    public interface IMarketDataStreamClient
+    {
+        System.Collections.Generic.IAsyncEnumerable<IbkrDotNet.Trading.Models.MarketData.MarketDataUpdate> SubscribeAsync(IbkrDotNet.Trading.Primitives.ConId conId, System.Collections.Generic.IReadOnlyList<string>? fields = null, string? exchange = null, System.Threading.CancellationToken cancellationToken = default);
+    }
     public interface INotificationsClient
     {
         System.Threading.Tasks.Task DeleteDeviceAsync(string deviceId, System.Threading.CancellationToken cancellationToken = default);
@@ -328,6 +332,11 @@ namespace IbkrDotNet.Trading.Clients
         public System.Threading.Tasks.Task<System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.MarketData.MarketDataSnapshot>> GetSnapshotAsync(System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Primitives.ConId> conIds, System.Collections.Generic.IReadOnlyList<string>? fields = null, System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task<IbkrDotNet.Trading.Models.MarketData.UnsubscribeAllResponse> UnsubscribeAllAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task<IbkrDotNet.Trading.Models.MarketData.UnsubscribeResponse> UnsubscribeAsync(IbkrDotNet.Trading.Primitives.ConId conId, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class MarketDataStreamClient : IbkrDotNet.Trading.Clients.IMarketDataStreamClient
+    {
+        public MarketDataStreamClient(IbkrDotNet.Trading.Streaming.IIbkrStreamingTransport transport, Microsoft.Extensions.Options.IOptions<IbkrDotNet.Trading.Configuration.IbkrTradingOptions> options, Microsoft.Extensions.Logging.ILogger<IbkrDotNet.Trading.Clients.MarketDataStreamClient> logger) { }
+        public System.Collections.Generic.IAsyncEnumerable<IbkrDotNet.Trading.Models.MarketData.MarketDataUpdate> SubscribeAsync(IbkrDotNet.Trading.Primitives.ConId conId, System.Collections.Generic.IReadOnlyList<string>? fields = null, string? exchange = null, System.Threading.CancellationToken cancellationToken = default) { }
     }
     public sealed class NotificationsClient : IbkrDotNet.Trading.Clients.INotificationsClient
     {
@@ -442,6 +451,7 @@ namespace IbkrDotNet.Trading.Configuration
         public NodaTime.Duration CloseTimeout { get; set; }
         public System.Action<System.Net.WebSockets.ClientWebSocketOptions>? ConfigureClientWebSocket { get; set; }
         public NodaTime.Duration KeepAliveInterval { get; set; }
+        public NodaTime.Duration MarketDataRenewalInterval { get; set; }
         public string? Origin { get; set; }
         public IbkrDotNet.Trading.Configuration.StreamingOverflowMode Overflow { get; set; }
         public bool Reconnect { get; set; }
@@ -1756,6 +1766,35 @@ namespace IbkrDotNet.Trading.Models.MarketData
         [System.Text.Json.Serialization.JsonPropertyName("server_id")]
         public string? ServerId { get; init; }
         public string? Symbol { get; }
+        [System.Text.Json.Serialization.JsonConverter(typeof(IbkrDotNet.Trading.Serialization.Converters.InstantEpochMillisecondsConverter?))]
+        [System.Text.Json.Serialization.JsonPropertyName("_updated")]
+        public NodaTime.Instant? UpdatedAt { get; init; }
+        public decimal? Volume { get; }
+        public decimal? GetDecimal(string field) { }
+        public string? GetString(string field) { }
+    }
+    public sealed class MarketDataUpdate : System.IEquatable<IbkrDotNet.Trading.Models.MarketData.MarketDataUpdate>
+    {
+        public MarketDataUpdate() { }
+        public decimal? AskPrice { get; }
+        public decimal? AskSize { get; }
+        public decimal? BidPrice { get; }
+        public decimal? BidSize { get; }
+        [System.Text.Json.Serialization.JsonPropertyName("conid")]
+        public IbkrDotNet.Trading.Primitives.ConId ConId { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("conidEx")]
+        public string? ConIdWithExchange { get; init; }
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, System.Text.Json.JsonElement> Fields { get; init; }
+        public decimal? LastPrice { get; }
+        public string? MarketDataAvailability { get; }
+        [System.Text.Json.Serialization.JsonIgnore]
+        public NodaTime.Instant ReceivedAt { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("server_id")]
+        public string? ServerId { get; init; }
+        public string? Symbol { get; }
+        [System.Text.Json.Serialization.JsonPropertyName("topic")]
+        public string? Topic { get; init; }
         [System.Text.Json.Serialization.JsonConverter(typeof(IbkrDotNet.Trading.Serialization.Converters.InstantEpochMillisecondsConverter?))]
         [System.Text.Json.Serialization.JsonPropertyName("_updated")]
         public NodaTime.Instant? UpdatedAt { get; init; }
