@@ -34,6 +34,11 @@ await ibkr.Session.EnsureBrokerageSessionAsync(ct);
 var accounts  = await ibkr.Portfolio.GetAccountsAsync(ct);
 var summary   = await ibkr.Portfolio.GetSummaryAsync(accounts[0].AccountId, ct);
 var quote     = await ibkr.MarketData.GetSnapshotAsync([conId], [MarketDataField.LastPrice], ct);
+
+await foreach (var update in ibkr.MarketDataStream.SubscribeAsync(conId, cancellationToken: ct))
+{
+    Console.WriteLine($"{update.LastPrice} {update.BidPrice}/{update.AskPrice}");   // pushed over the WebSocket
+}
 ```
 
 Twelve endpoint groups hang off `IIbkrTradingClient`, or inject one — `IOrdersClient`, `IPortfolioClient` — where
@@ -76,7 +81,8 @@ is exactly the class of bug NodaTime exists to make unrepresentable. See
 ## Status
 
 In development. The core trading path plus watchlists, the scanner, FYIs and notifications, event contracts,
-alerts and PortfolioAnalyst are implemented; the two Financial Advisor groups are not. See
+alerts, PortfolioAnalyst and streaming market data over the WebSocket are implemented; the two Financial Advisor
+groups are not. See
 [Endpoint coverage](guides/endpoint-coverage.md) for what is in and what is not, and the
 [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones) for what is next.
 

@@ -19,7 +19,7 @@ exercised against a live gateway, executions included.
 | `IPortfolioAnalystClient` | PortfolioAnalyst | 4 |
 
 All twelve hang off `IIbkrTradingClient`, and each is registered individually so a component can take just the one
-it needs.
+it needs. The WebSocket is a separate surface, covered [below](#websocket-streaming).
 
 ## The ten that unit tests cover and a live gateway has not
 
@@ -30,6 +30,31 @@ against a real account is not undoable, so the live sweep lists them as skips sa
 Three are the **alert reads that need an alert to already exist**. IBKR publishes five alert endpoints and no way
 to create an alert — they have to be built in Trader Workstation or Client Portal. Which also makes
 `DeleteAsync` one-way; to stop an alert firing without losing it, deactivate it.
+
+## WebSocket streaming
+
+IBKR's streaming surface is one socket, `/v1/api/ws`, carrying every streaming topic it publishes. The transport
+that opens it — the brokerage session's credentials on the upgrade request, `tic` keep-alive, reconnection with
+the open subscriptions re-sent, one read loop demultiplexed into per-topic subscriptions — is
+`IIbkrStreamingTransport`, and any topic can be read through it. One topic has a typed client:
+
+| Client | Topic | What it streams |
+| --- | --- | --- |
+| `IMarketDataStreamClient` | `smd` | Quotes for one instrument, renewed across IBKR's fifteen-minute stream limit |
+
+Four of the topics IBKR sends without being asked — `system`, `sts`, `blt` and `ntf` — have models
+(`StreamingSystemMessage`, `StreamingAuthenticationStatus`, `StreamingBulletin`, `StreamingNotification`) and are
+read through the transport; the fifth, `act` account updates, arrives as raw JSON. The other solicited topics —
+`sor` orders, `str` trades, `spl` profit and loss, `sld` ledger, `ssd` summary, `sbd` price ladder, `smh`
+historical bars — are reachable the same way, with each message's body as a `JsonElement` or deserialized into a
+record of your own. [Market data](market-data.md#other-topics) shows the call.
+
+Both hang off `IIbkrTradingClient` as `Streaming` and `MarketDataStream`, and are registered individually like
+the endpoint clients.
+
+The market data stream has been driven end to end over a scripted socket and not yet against a live gateway. The
+`.live.json` fixture that would pin IBKR's real message is still to be captured, and the streaming group in
+`samples/IbkrDotNet.Samples.Verify` prints the first message in full for exactly that purpose.
 
 ## What is not implemented
 
@@ -46,8 +71,6 @@ Both need an FA master account with sub-accounts under it to verify against. An 
 these would be the first group in the repository to ship on documentation fixtures alone, with no live-gateway
 confirmation behind the models — which is where most of the corrections in the
 [reference](../../README.md#things-about-ibkr-that-will-otherwise-surprise-you) came from.
-
-**WebSocket streaming** is out of scope entirely and not planned.
 
 ## Reaching an endpoint that is not modelled
 

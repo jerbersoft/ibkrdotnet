@@ -87,13 +87,14 @@ public sealed class Positions(IIbkrTradingClient ibkr)
 }
 ```
 
-`IIbkrTradingClient` groups all twelve endpoint clients. Inject one — `IPortfolioClient`, `IOrdersClient` — where
-a component only needs one; they are registered individually as well.
+`IIbkrTradingClient` groups all twelve endpoint clients, plus `MarketDataStream` and the WebSocket transport it
+runs over. Inject one — `IPortfolioClient`, `IOrdersClient` — where a component only needs one; they are
+registered individually as well.
 
 ## Try it without writing anything
 
-The repository ships a read-only console tour: session status, accounts, balances, a quote, daily bars and an
-order *preview*. It never places a live order.
+The repository ships a read-only console tour: session status, accounts, balances, a quote, a few seconds of the
+same quote streamed over the WebSocket, daily bars and an order *preview*. It never places a live order.
 
 ```sh
 dotnet run --project samples/IbkrDotNet.Samples.Console
@@ -114,5 +115,5 @@ disable it against a real IBKR host.
 - [Authentication](authentication.md) — the three mechanisms, and which one you are eligible for
 - [Sessions](sessions.md) — what a brokerage session is, and why a keep-alive is not enough
 - [Placing orders](orders.md) — the reply workflow, which is where most first attempts stall
-- [Market data](market-data.md) — why your first snapshot comes back empty
+- [Market data](market-data.md) — why your first snapshot comes back empty, and streaming quotes over the WebSocket
 - [Troubleshooting](troubleshooting.md) — the failures that look like bugs in your code and are not

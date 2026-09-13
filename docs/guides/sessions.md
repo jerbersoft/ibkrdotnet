@@ -42,7 +42,9 @@ find out. There is no way to hold two; the fix is a second username.
 ## Timing out and expiring are different problems
 
 **Idle timeout, ~5 minutes.** IBKR drops an idle session. `AddBrokerageSessionKeepAlive()` pings `/tickle` every
-60 seconds to stop that; without it, call `IIbkrSessionManager.KeepAliveAsync` yourself on a timer.
+60 seconds to stop that; without it, call `IIbkrSessionManager.KeepAliveAsync` yourself on a timer. An open
+WebSocket does not change this: its `tic` keep-alive, which the transport sends for you, keeps the socket open and
+nothing else, so a stream needs `/tickle` running behind it just the same.
 
 **Outright expiry, 24 hours.** A session expires at midnight in New York, Zug or Hong Kong — whichever region you
 connect nearest to — no matter how diligently it was tickled. A keep-alive does not prevent this and cannot.

@@ -11,7 +11,7 @@ Targets `net10.0`. Every date and time value in the public API is a [NodaTime](h
 
 **Documentation: [jerbersoft.github.io/ibkrdotnet](https://jerbersoft.github.io/ibkrdotnet/)** — thirteen guides and the generated API reference for both packages, published from `docs/` on every push to `master`. To build and serve the site locally instead, see [Working on this repository](#working-on-this-repository). This file is the reference the guides link back to.
 
-> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists, the market scanner, FYIs & notifications, event contracts, alerts and PortfolioAnalyst — 90 of IBKR's 108 Trading endpoints — is implemented. All but ten have been exercised against a live gateway, executions included. The ten are the seven notification writes, which change settings on the username and cannot be undone through the API, and the three alert endpoints that need an alert to already exist — IBKR publishes no endpoint that creates one. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
+> **Status: in development.** The core trading path (session, accounts, portfolio, contracts, orders, market data) plus watchlists, the market scanner, FYIs & notifications, event contracts, alerts and PortfolioAnalyst — 90 of IBKR's 108 Trading endpoints — is implemented, and so is streaming market data over IBKR's WebSocket. All but ten of the endpoints have been exercised against a live gateway, executions included. The ten are the seven notification writes, which change settings on the username and cannot be undone through the API, and the three alert endpoints that need an alert to already exist — IBKR publishes no endpoint that creates one. The WebSocket has so far been driven only over a scripted socket; its first live run is pending. The rest is tracked in the [milestones](https://github.com/jerbersoft/ibkrdotnet/milestones).
 
 ## Getting started
 
@@ -58,6 +58,15 @@ public sealed class Trader(IIbkrTradingClient ibkr)
 ```
 
 Inject an individual client — `IOrdersClient`, `IPortfolioClient`, and so on — where a component only needs one.
+
+Streaming market data is an `IAsyncEnumerable` over the WebSocket. The first read opens the socket; leaving the loop releases the instrument's market data line:
+
+```csharp
+await foreach (var quote in ibkr.MarketDataStream.SubscribeAsync(conId, MarketDataField.TopOfBook, cancellationToken: ct))
+{
+    Console.WriteLine($"{quote.LastPrice} {quote.BidPrice}/{quote.AskPrice} at {quote.UpdatedAt}");
+}
+```
 
 ## Choosing an authentication mechanism
 
@@ -162,6 +171,10 @@ The library performs the whole handshake — RSA-decrypting the access token sec
 
 **The first market data snapshot returns nothing.** IBKR treats it as a pre-flight that starts the backend streaming the instrument; snapshots are read from those open streams, not from a cache. Send the pre-flight with every field you will later want, then ask again. Each subscribed instrument consumes one of your market data lines (100 by default), so unsubscribe when you are done.
 
+**A market data stream ends fifteen minutes after it was requested.** IBKR's WebSocket guide says so in passing, and asks that a stream be requested again after ten. `IMarketDataStreamClient` re-sends `smd` every ten minutes (`Streaming.MarketDataRenewalInterval`) for as long as a stream is being read, so a reader sees no gap; raising that interval past fifteen minutes buys a gap every cycle. The REST `UnsubscribeAsync` and `UnsubscribeAllAsync` close the same backend streams the socket reads from, so a stream closed that way goes quiet until its next renewal requests it again.
+
+**The WebSocket has its own keep-alive, and it is in addition to the REST one, not instead of it.** `tic` at least once a minute keeps the socket open; `/tickle` keeps the brokerage session behind it, and the socket needs that session just as `/iserver` does — it is opened through `EnsureBrokerageSessionAsync`, and the `/tickle` inside that call is what mints the session token the upgrade request presents as its `api=` cookie. The transport sends `tic` every 30 seconds itself and logs a warning when the `sts` topic reports the session no longer authenticated, but it does not tickle: `AddBrokerageSessionKeepAlive()` is as necessary with a stream open as without.
+
 **Call `/portfolio/accounts` first.** Other `/portfolio` endpoints return empty or stale data for an account until it has been listed. IBKR does not report an error, which makes this a slow thing to diagnose.
 
 **An order reply message is not a rejection.** Submission can answer with a prompt IBKR wants confirmed — usually a precautionary limit configured on your username. `SubmitAsync` returns `OrderSubmissionResult.ReplyRequired`, and the default `OrderReplyPolicy.Manual` leaves the decision to you, because these prompts carry margin, liquidity and price-constraint warnings. `OrderReplyPolicy.AutoConfirm` is opt-in. To stop being asked at all, suppress the message categories at the start of the session with `SuppressMessagesAsync`.
@@ -229,7 +242,7 @@ Response fixtures ending `.live.json` were captured from a running gateway rathe
 
 `tools/fetch-spec.sh` downloads IBKR's reference documentation as Markdown into a gitignored `artifacts/spec/`. IBKR serves a clean Markdown rendering of any docs page by appending `.md` to its URL, which makes it a reliable source when adding or verifying endpoint models. The response fixtures under `tests/IbkrDotNet.Trading.Tests/Fixtures/Responses/` are the example payloads from those pages, so deserialization is checked against what the API actually emits.
 
-`samples/IbkrDotNet.Samples.Console` is a read-only tour against a locally running gateway: session status, accounts, balances, a quote, daily bars and an order *preview*. It never places a live order.
+`samples/IbkrDotNet.Samples.Console` is a read-only tour against a locally running gateway: session status, accounts, balances, a quote, a few seconds of the same quote streamed over the WebSocket, daily bars and an order *preview*. It never places a live order.
 
 ```bash
 dotnet run --project samples/IbkrDotNet.Samples.Console
@@ -242,7 +255,7 @@ dotnet run --project samples/IbkrDotNet.Samples.Console -- \
     --Ibkr:BaseAddress=https://localhost:5050 --TrustGatewayCertificate=true
 ```
 
-`--TrustGatewayCertificate` relaxes certificate validation for loopback addresses only, so it cannot quietly disable it for a real IBKR host.
+`--TrustGatewayCertificate` relaxes certificate validation for loopback addresses only, so it cannot quietly disable it for a real IBKR host. It is applied to the WebSocket upgrade separately from the `HttpClient` handler, because the upgrade does not go through that handler.
 
 `samples/IbkrDotNet.Samples.Verify` sweeps every implemented endpoint against a running gateway and prints one line per endpoint. It exists because the unit tests cannot see the two kinds of bug that matter most here: a transport problem that only an intermediary produces, and a response whose real shape contradicts the documented example the fixtures were built from.
 
@@ -258,6 +271,8 @@ No order is submitted by default. `--Orders=true` adds the order write path, whi
 Both flags are refused on anything but a paper account, and there is deliberately no flag to override that.
 
 The notification checks read and never write, and there is no flag to make them write. Every other write path in the sweep undoes itself, but these change subscriptions and delivery settings on the username, and IBKR documents no way to read a value before overwriting it or to re-register a device once deleted. The seven writes are listed in the report as skips, each saying what it would have changed, so the group is visible in full rather than half-absent.
+
+The streaming checks open the WebSocket, read the `system` confirmation and the `sts` status IBKR sends on connect, send `tic`, stream the contract the read-only checks found until its first `smd` message, wait for a heartbeat and close the socket. That first message is printed in full — it carries no account data — so it can be kept as `market-data-response.live.json` beside the documented fixture, which is the capture the library still lacks.
 
 The watchlist checks do write without a flag, because a watchlist cannot move money. One is created under a fixed identifier, read back to confirm its contents, and deleted in a `finally` block; the identifier is checked against the existing lists first, so a watchlist the user created is never displaced.
 
