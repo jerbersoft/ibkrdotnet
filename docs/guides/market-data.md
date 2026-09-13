@@ -80,5 +80,72 @@ applies on top, so a snapshot loop can exhaust the whole budget by itself. See [
 
 ## Streaming
 
-Out of scope. IBKR's WebSocket surface is not modelled by this library and there are no plans to; the snapshot
-endpoint over the streams it opens is what is here.
+The same quote, pushed rather than polled. `IMarketDataStreamClient` runs over IBKR's WebSocket and hands back
+each update as IBKR sends it:
+
+```csharp
+await foreach (var quote in ibkr.MarketDataStream.SubscribeAsync(conId, MarketDataField.TopOfBook, cancellationToken: ct))
+{
+    Console.WriteLine($"{quote.LastPrice} {quote.BidPrice}/{quote.AskPrice} at {quote.UpdatedAt}");
+}
+```
+
+Nothing is sent until the loop starts. The first read opens the socket if it is not open — which needs the
+brokerage session, so `EnsureBrokerageSessionAsync` applies here as everywhere else behind `/iserver` — and sends
+`smd` for the instrument. Leaving the loop, whether by `break`, cancellation or an exception, sends `umd`, which
+releases the instrument's market data line. Read a stream for exactly as long as you want it: every open stream
+holds one of the account's lines, the same 100 the snapshot endpoint draws on.
+
+`MarketDataUpdate` is the snapshot's shape — data points keyed by tick number, read through the same named
+accessors and the same `MarketDataField` constants — plus the `topic` that routed it and `ReceivedAt`, when the
+transport read it. IBKR does not promise every requested field in every message. An accessor returning `null`
+means the field was not in *this* message, not that it has no value; keep the last value you saw.
+
+**IBKR ends a stream fifteen minutes after it was requested.** The client re-sends the request every ten minutes
+(`Streaming.MarketDataRenewalInterval`) for as long as the loop is running, so a long read sees no gap and you do
+nothing. An interval longer than IBKR's limit means a gap every cycle.
+
+**Updates arrive at most every 500 ms**, and a reader that falls behind is handed the latest message rather than
+a backlog. That is the transport's default buffer of one message with drop-oldest, which is the right rule for a
+quote; [Configuration](configuration.md#the-settings) has the knobs.
+
+**A socket that drops does not end the loop.** The transport reopens it with backoff and re-sends the request, so
+the loop sees a pause and then updates again. Set `Streaming.Reconnect = false` to have the loop end with an
+`IbkrStreamingException` instead.
+
+**Two keep-alives, not one.** The transport sends `tic` every 30 seconds to keep the socket alive. That does not
+keep the brokerage session behind it alive; the REST `/tickle` still has to run, so
+`AddBrokerageSessionKeepAlive()` is as necessary with a stream open as without. [Sessions](sessions.md) covers
+what it is keeping alive.
+
+`exchange` names a data source — `SubscribeAsync(conId, exchange: "ARCA", ...)` sends `smd+CONID@ARCA` — and
+SMART is the default. The REST `UnsubscribeAsync` and `UnsubscribeAllAsync` close the same backend streams, so a
+stream closed that way goes quiet until its next renewal requests it again.
+
+Against the Client Portal Gateway the socket meets the same self-signed certificate `HttpClient` does, and the
+handler you configured for `HttpClient` does not cover the WebSocket upgrade. `Streaming.ConfigureClientWebSocket`
+is where the socket's certificate validation is relaxed; the console sample shows the loopback-only version.
+
+### Other topics
+
+Market data is the one topic with a typed client. The rest of IBKR's streaming surface — orders, trades,
+profit and loss, the account ledger and summary, the price ladder, historical bars — is reachable through the
+transport the market data client is built on, keeping authentication, keep-alive and reconnection:
+
+```csharp
+var request = StreamingSubscriptionRequest.Solicited(
+    StreamingTopics.OrderUpdates, parameters: new { filters = new[] { "Submitted", "Filled" } });
+
+await using var orders = await ibkr.Streaming.SubscribeAsync(request, ct);
+await foreach (var message in orders.ReadAllAsync(ct))
+{
+    var body = message.Body;   // the JsonElement as IBKR sent it, or message.Deserialize<T>() into your own record
+}
+```
+
+`StreamingTopics` names every topic IBKR publishes. A solicited request opens the socket, sends its frame, and
+derives its unsubscribe frame by IBKR's convention (`sor` → `uor`); disposing the subscription sends it. IBKR's
+unsolicited topics — `system`, `sts`, `act`, `blt` and `ntf` — are read with
+`StreamingSubscriptionRequest.Unsolicited`, which only registers to be routed to. IBKR sends the first `system` and `sts` messages on connect, so register
+for those *before* the socket opens or you will race them. `ibkr.Streaming.IsBrokerageSessionAuthenticated` and
+`LastHeartbeatAt` are the transport's own reading of those two topics, kept whether or not anybody subscribes.

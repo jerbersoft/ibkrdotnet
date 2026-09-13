@@ -9,6 +9,10 @@
 //   dotnet run --project samples/IbkrDotNet.Samples.Console -- \
 //       --Ibkr:BaseAddress=https://localhost:5050 --TrustGatewayCertificate=true
 //
+// It reads the session status, the accounts and their balances, one quote by snapshot and then the
+// same quote streamed over the WebSocket for a few seconds, a week of daily bars, and an order
+// preview.
+//
 // This sample never places a live order. The only order-related call it makes is a preview
 // (/orders/whatif), which asks IBKR what an order would do without submitting it.
 
@@ -121,6 +125,37 @@ try
     Console.WriteLine(
         $"  last={snapshot[0].LastPrice} bid={snapshot[0].BidPrice} ask={snapshot[0].AskPrice} " +
         $"({snapshot[0].MarketDataAvailability})");
+
+    // The same quote, pushed rather than polled. The first read opens the WebSocket and sends smd;
+    // leaving the loop sends umd, which releases the instrument's market data line. Five seconds is
+    // enough to see a few updates during trading hours. IBKR does not promise every field in every
+    // message, so an accessor can be null for a value that simply was not in that update.
+    Console.WriteLine("\nStreaming AAPL for five seconds:");
+    using var streamFor = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+    streamFor.CancelAfter(TimeSpan.FromSeconds(5));
+    var updates = 0;
+    try
+    {
+        await foreach (var update in ibkr.MarketDataStream.SubscribeAsync(
+            conId, MarketDataField.TopOfBook, cancellationToken: streamFor.Token))
+        {
+            updates++;
+            Console.WriteLine(
+                $"  {update.UpdatedAt}  last={update.LastPrice} bid={update.BidPrice} ask={update.AskPrice}");
+        }
+    }
+    catch (OperationCanceledException) when (streamFor.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+    {
+        // The five seconds are up.
+    }
+
+    if (updates == 0)
+    {
+        Console.WriteLine("  No update arrived. Does the account have market data for this instrument?");
+    }
+
+    // Nothing else in the tour needs the socket. The host would close it on dispose anyway.
+    await ibkr.Streaming.CloseAsync(cancellationToken);
 
     var history = await ibkr.MarketData.GetHistoryAsync(
         conId,

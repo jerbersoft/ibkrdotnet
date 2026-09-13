@@ -65,6 +65,22 @@ samples take `--TrustGatewayCertificate=true`, which relaxes validation **for lo
 cannot quietly disable it against a real IBKR host. In your own application, trust the gateway's certificate
 explicitly rather than disabling validation globally.
 
+The WebSocket meets the same certificate, and the handler you configured for `HttpClient` does not cover the
+upgrade request. Relax it for the socket separately through `Streaming.ConfigureClientWebSocket`; the console
+sample shows the loopback-only version.
+
+## A market data stream goes quiet after about fifteen minutes
+
+IBKR ends a stream fifteen minutes after it was requested. `IMarketDataStreamClient` re-sends the request every
+ten minutes for as long as you are reading, so if a stream still goes quiet check two things: that
+`Streaming.MarketDataRenewalInterval` has not been raised past IBKR's limit, and that the brokerage session behind
+the socket is still being tickled. The socket's own `tic` keep-alive, which the transport sends, does not keep
+the session alive; `AddBrokerageSessionKeepAlive()` does. IBKR reports the session's state on the socket too,
+and `ibkr.Streaming.IsBrokerageSessionAuthenticated` is the transport's reading of it.
+
+A stream closed by the REST `UnsubscribeAsync` or `UnsubscribeAllAsync` also goes quiet, until its next renewal
+requests it again. See [Market data](market-data.md#streaming).
+
 ## You logged in but reached the wrong account
 
 The gateway login page has no live/paper switch. Which account you reach is decided by the username you type, and

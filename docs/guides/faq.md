@@ -36,7 +36,9 @@ application speaks BCL types.
 
 ## Does it support WebSocket streaming?
 
-No, and it is not planned. Market data is read through the snapshot endpoint over the streams IBKR opens.
+Yes. `IMarketDataStreamClient` streams quotes for an instrument as an `IAsyncEnumerable`, opening the socket on
+the first read and renewing the stream across IBKR's fifteen-minute limit for you. Every other topic IBKR
+publishes is reachable through the transport underneath it. [Market data](market-data.md#streaming).
 
 ## Why does my first market data snapshot come back empty?
 
@@ -57,7 +59,9 @@ box on your IP, and repeat violations can get it blocked. [Rate limits](rate-lim
 ## Is it thread-safe?
 
 Yes. The clients are stateless over a shared `HttpClient`; the rate limiters are a singleton and synchronize
-internally; the authenticators cache their tokens behind a lock. Register once and inject anywhere.
+internally; the authenticators cache their tokens behind a lock. The streaming transport is a singleton holding
+the one socket a session gets, and subscriptions opened from any thread share it. Register once and inject
+anywhere.
 
 ## Is it AOT- and trimming-friendly?
 
@@ -73,12 +77,14 @@ AOT audit, so treat AOT as untested rather than supported.
 await api.SendAsync<JsonElement>(IbkrRequest.Get("/v1/api/iserver/watchlists"), ct);
 ```
 
+For a streaming topic, `IIbkrStreamingTransport.SubscribeAsync` is the same escape hatch over the WebSocket.
 [Endpoint coverage](endpoint-coverage.md).
 
 ## What is not implemented?
 
 The two Financial Advisor groups — allocation management and model portfolios, 18 endpoints between them. They
-need an FA master account to verify against. [Endpoint coverage](endpoint-coverage.md).
+need an FA master account to verify against. Of the WebSocket topics, only market data has a typed client; the
+rest are read through the transport. [Endpoint coverage](endpoint-coverage.md).
 
 ## Is it on nuget.org?
 
