@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using IbkrDotNet.Trading.Primitives;
@@ -77,20 +76,7 @@ public sealed record MarketDataSnapshot
 
     /// <summary>Returns a data point as text, exactly as IBKR sent it.</summary>
     /// <param name="field">The tick identifier. See <see cref="MarketDataField"/>.</param>
-    public string? GetString(string field)
-    {
-        if (!Fields.TryGetValue(field, out var value))
-        {
-            return null;
-        }
-
-        return value.ValueKind switch
-        {
-            JsonValueKind.String => value.GetString(),
-            JsonValueKind.Null or JsonValueKind.Undefined => null,
-            _ => value.GetRawText(),
-        };
-    }
+    public string? GetString(string field) => MarketDataValues.GetString(Fields, field);
 
     /// <summary>
     /// Returns a data point as a number, discarding any leading marker letter.
@@ -99,25 +85,7 @@ public sealed record MarketDataSnapshot
     /// <returns>
     /// The value, or <see langword="null"/> when the field is absent or is not numeric.
     /// </returns>
-    public decimal? GetDecimal(string field)
-    {
-        var text = GetString(field);
-        if (string.IsNullOrWhiteSpace(text))
-        {
-            return null;
-        }
-
-        // A price may be prefixed to mark its nature, for example "C212.11" for a previous close.
-        var span = text.AsSpan().Trim();
-        while (span.Length > 0 && char.IsAsciiLetter(span[0]))
-        {
-            span = span[1..];
-        }
-
-        return decimal.TryParse(span, NumberStyles.Number, CultureInfo.InvariantCulture, out var value)
-            ? value
-            : null;
-    }
+    public decimal? GetDecimal(string field) => MarketDataValues.GetDecimal(Fields, field);
 }
 
 /// <summary>The response from <c>POST /iserver/marketdata/unsubscribe</c>.</summary>

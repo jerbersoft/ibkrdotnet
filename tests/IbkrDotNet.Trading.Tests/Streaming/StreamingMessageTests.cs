@@ -64,20 +64,39 @@ public class StreamingMessageTests
     }
 
     [Fact]
-    public void The_documented_market_data_message_reads_as_a_snapshot()
+    public void The_documented_market_data_message_reads_as_an_update()
     {
-        // The streaming shape is the snapshot shape plus 'topic' and '6119'; both land in Fields.
+        // The streaming shape is the snapshot shape plus 'topic' and '6119'. The topic is its own
+        // property; the second copy of the server identifier stays in Fields.
         var message = Load("market-data-response.json");
-        var snapshot = message.Deserialize<MarketDataSnapshot>();
+        var update = message.Deserialize<MarketDataUpdate>();
 
         Assert.Equal("smd+8314", message.Topic);
+        Assert.Equal("smd+8314", update.Topic);
+        Assert.Equal(8314, update.ConId.Value);
+        Assert.Equal("8314", update.ConIdWithExchange);
+        Assert.Equal("q2", update.ServerId);
+        Assert.Equal(189.60m, update.LastPrice);
+        Assert.Equal(189.56m, update.BidPrice);
+        Assert.Equal(189.61m, update.AskPrice);
+        Assert.Equal(200m, update.BidSize);
+        Assert.Equal(500m, update.AskSize);
+        Assert.Equal("100", update.GetString(MarketDataField.LastSize));
+        Assert.Equal("RpB", update.MarketDataAvailability);
+        Assert.Equal(Instant.FromUnixTimeMilliseconds(1712596911593), update.UpdatedAt);
+        Assert.Equal("q2", update.GetString("6119"));
+        Assert.False(update.Fields.ContainsKey("topic"));
+        Assert.Null(update.Volume);
+    }
+
+    [Fact]
+    public void The_documented_market_data_message_still_reads_as_a_snapshot()
+    {
+        // The snapshot type is what a caller going through the transport directly may reach for.
+        var snapshot = Load("market-data-response.json").Deserialize<MarketDataSnapshot>();
+
         Assert.Equal(8314, snapshot.ConId.Value);
         Assert.Equal(189.60m, snapshot.LastPrice);
-        Assert.Equal(189.56m, snapshot.BidPrice);
-        Assert.Equal(189.61m, snapshot.AskPrice);
-        Assert.Equal("RpB", snapshot.MarketDataAvailability);
-        Assert.Equal(Instant.FromUnixTimeMilliseconds(1712596911593), snapshot.UpdatedAt);
-        Assert.Equal("q2", snapshot.GetString("6119"));
         Assert.Equal("smd+8314", snapshot.GetString("topic"));
     }
 

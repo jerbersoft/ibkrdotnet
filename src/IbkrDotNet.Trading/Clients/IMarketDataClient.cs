@@ -63,9 +63,20 @@ public interface IMarketDataClient
     /// <summary>Closes the backend market data stream for one instrument.</summary>
     /// <param name="conId">The instrument.</param>
     /// <param name="cancellationToken">Cancels the request.</param>
+    /// <remarks>
+    /// This is the stream that <see cref="GetSnapshotAsync"/> reads from, and also the one behind
+    /// a WebSocket stream from <see cref="IMarketDataStreamClient.SubscribeAsync"/> for the same
+    /// instrument. A WebSocket stream closed this way goes quiet until its next renewal requests it
+    /// again; end it by disposing its enumeration instead.
+    /// </remarks>
     Task<UnsubscribeResponse> UnsubscribeAsync(ConId conId, CancellationToken cancellationToken = default);
 
     /// <summary>Closes every backend market data stream.</summary>
     /// <param name="cancellationToken">Cancels the request.</param>
+    /// <remarks>
+    /// Every stream, including those behind open WebSocket streams from
+    /// <see cref="IMarketDataStreamClient.SubscribeAsync"/>, which go quiet until their next renewal
+    /// requests them again.
+    /// </remarks>
     Task<UnsubscribeAllResponse> UnsubscribeAllAsync(CancellationToken cancellationToken = default);
 }

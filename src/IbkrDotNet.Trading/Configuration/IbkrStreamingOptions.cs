@@ -85,6 +85,18 @@ public sealed class IbkrStreamingOptions
     public Duration CloseTimeout { get; set; } = Duration.FromSeconds(5);
 
     /// <summary>
+    /// How often an open market data stream is requested again so that it outlives IBKR's limit.
+    /// Defaults to 10 minutes.
+    /// </summary>
+    /// <remarks>
+    /// IBKR ends a market data stream 15 minutes after it was requested and asks for a new request
+    /// after 10. <see cref="Clients.IMarketDataStreamClient"/> re-sends the request on this interval
+    /// for as long as a stream is being read, so the reader sees no gap. An interval longer than
+    /// IBKR's limit means a gap every cycle.
+    /// </remarks>
+    public Duration MarketDataRenewalInterval { get; set; } = Duration.FromMinutes(10);
+
+    /// <summary>
     /// A hook over the <see cref="ClientWebSocketOptions"/> before the upgrade request is sent.
     /// </summary>
     /// <remarks>
@@ -127,6 +139,12 @@ public sealed class IbkrStreamingOptions
         {
             throw new InvalidOperationException(
                 $"{nameof(IbkrStreamingOptions)}.{nameof(CloseTimeout)} must be positive.");
+        }
+
+        if (MarketDataRenewalInterval <= Duration.Zero)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(IbkrStreamingOptions)}.{nameof(MarketDataRenewalInterval)} must be positive.");
         }
     }
 }

@@ -51,6 +51,7 @@ public class StreamingAddressTests
     [InlineData("ReconnectDelay", 0)]
     [InlineData("BufferCapacity", 0)]
     [InlineData("CloseTimeout", 0)]
+    [InlineData("MarketDataRenewalInterval", 0)]
     public void Validation_rejects_a_value_that_would_disable_the_transport(string property, int value)
     {
         var options = new IbkrStreamingOptions();
@@ -64,6 +65,9 @@ public class StreamingAddressTests
                 break;
             case "BufferCapacity":
                 options.BufferCapacity = value;
+                break;
+            case "MarketDataRenewalInterval":
+                options.MarketDataRenewalInterval = NodaTime.Duration.FromSeconds(value);
                 break;
             default:
                 options.CloseTimeout = NodaTime.Duration.FromSeconds(value);

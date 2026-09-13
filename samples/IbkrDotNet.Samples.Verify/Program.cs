@@ -33,6 +33,7 @@ using IbkrDotNet.Extensions.DependencyInjection;
 using IbkrDotNet.Samples.Verify;
 using IbkrDotNet.Trading;
 using IbkrDotNet.Trading.Authentication;
+using IbkrDotNet.Trading.Clients;
 using IbkrDotNet.Trading.Configuration;
 using IbkrDotNet.Trading.Http;
 using IbkrDotNet.Trading.Primitives;
@@ -127,7 +128,11 @@ await using (var streaming = new IbkrStreamingTransport(
     host.Services.GetRequiredService<IClock>(),
     host.Services.GetRequiredService<ILogger<IbkrStreamingTransport>>()))
 {
-    await StreamingChecks.RunAsync(streaming, probe, cancellationToken);
+    var marketDataStream = new MarketDataStreamClient(
+        streaming,
+        host.Services.GetRequiredService<IOptions<IbkrTradingOptions>>(),
+        host.Services.GetRequiredService<ILogger<MarketDataStreamClient>>());
+    await StreamingChecks.RunAsync(streaming, marketDataStream, context.ConId, probe, cancellationToken);
 }
 
 await WatchlistChecks.RunAsync(ibkr, probe, context, cancellationToken);
