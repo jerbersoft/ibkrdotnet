@@ -19,9 +19,11 @@ mkdir -p "$OUT_DIR"
 echo "Fetching index: $INDEX_URL"
 curl -sfL -A "$UA" "$INDEX_URL" -o "$OUT_DIR/llms.txt"
 
-# Pull every Trading reference page, the authentication guides, and the top-level Web API docs.
+# Pull every Trading reference page, the authentication guides, the top-level Web API docs, the
+# WebSocket reference (v1/ws/ topics and the api-reference/websocket/ upgrade endpoint), and the
+# market-data guides, which is where IBKR documents the streaming example payloads.
 grep -oE 'https://ibkrcampus\.com/docs/web-api/[^ )]*\.md' "$OUT_DIR/llms.txt" \
-  | grep -E 'api-reference/trading/|api-reference/authentication/|/authentication/|/api/web-api/|/introduction\.md|/getting-started\.md' \
+  | grep -E 'api-reference/trading/|api-reference/authentication/|/authentication/|/api/web-api/|/introduction\.md|/getting-started\.md|/v1/ws/|api-reference/websocket/|web-api/trading/market-data/' \
   | sort -u > "$OUT_DIR/.urls"
 
 count=$(wc -l < "$OUT_DIR/.urls" | tr -d ' ')
