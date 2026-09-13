@@ -14,6 +14,7 @@ namespace IbkrDotNet.Trading.Authentication
         bool RequiresSessionCookie { get; }
         string Scheme { get; }
         System.Threading.Tasks.ValueTask AuthenticateAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.ValueTask<IbkrDotNet.Trading.Authentication.StreamingCredential?> GetStreamingCredentialAsync(System.Threading.CancellationToken cancellationToken);
     }
     public sealed class IbkrSessionState
     {
@@ -22,6 +23,12 @@ namespace IbkrDotNet.Trading.Authentication
         public string? SessionToken { get; }
         public void Clear() { }
         public void Set(string sessionToken, NodaTime.Instant obtainedAt) { }
+    }
+    public sealed class StreamingCredential : System.IEquatable<IbkrDotNet.Trading.Authentication.StreamingCredential>
+    {
+        public StreamingCredential(string ParameterName, string Value) { }
+        public string ParameterName { get; init; }
+        public string Value { get; init; }
     }
 }
 namespace IbkrDotNet.Trading.Authentication.OAuth1a
@@ -55,6 +62,7 @@ namespace IbkrDotNet.Trading.Authentication.OAuth1a
         public string Scheme { get; }
         public System.Threading.Tasks.ValueTask AuthenticateAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken) { }
         public void Dispose() { }
+        public System.Threading.Tasks.ValueTask<IbkrDotNet.Trading.Authentication.StreamingCredential?> GetStreamingCredentialAsync(System.Threading.CancellationToken cancellationToken) { }
         public void Invalidate() { }
     }
     public sealed class OAuth1aOptions
@@ -100,6 +108,7 @@ namespace IbkrDotNet.Trading.Authentication.OAuth2
         public string Scheme { get; }
         public System.Threading.Tasks.ValueTask AuthenticateAsync(System.Net.Http.HttpRequestMessage request, System.Threading.CancellationToken cancellationToken) { }
         public void Dispose() { }
+        public System.Threading.Tasks.ValueTask<IbkrDotNet.Trading.Authentication.StreamingCredential?> GetStreamingCredentialAsync(System.Threading.CancellationToken cancellationToken) { }
         public void Invalidate() { }
     }
     public sealed class OAuth2Options
@@ -425,6 +434,21 @@ namespace IbkrDotNet.Trading.Configuration
         public bool EnforceGlobalLimit { get; set; }
         public NodaTime.Duration MaxWait { get; set; }
     }
+    public sealed class IbkrStreamingOptions
+    {
+        public IbkrStreamingOptions() { }
+        public System.Uri? Address { get; set; }
+        public int BufferCapacity { get; set; }
+        public NodaTime.Duration CloseTimeout { get; set; }
+        public System.Action<System.Net.WebSockets.ClientWebSocketOptions>? ConfigureClientWebSocket { get; set; }
+        public NodaTime.Duration KeepAliveInterval { get; set; }
+        public string? Origin { get; set; }
+        public IbkrDotNet.Trading.Configuration.StreamingOverflowMode Overflow { get; set; }
+        public bool Reconnect { get; set; }
+        public NodaTime.Duration ReconnectDelay { get; set; }
+        public NodaTime.Duration ReconnectMaxDelay { get; set; }
+        public void Validate() { }
+    }
     public sealed class IbkrTradingOptions
     {
         public const string SectionName = "Ibkr";
@@ -432,11 +456,18 @@ namespace IbkrDotNet.Trading.Configuration
         public System.Uri? BaseAddress { get; set; }
         public IbkrDotNet.Trading.Configuration.IbkrEnvironment Environment { get; set; }
         public IbkrDotNet.Trading.Configuration.IbkrRateLimitingOptions RateLimiting { get; set; }
+        public IbkrDotNet.Trading.Configuration.IbkrStreamingOptions Streaming { get; set; }
         public NodaTime.Duration Timeout { get; set; }
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings=false)]
         public string UserAgent { get; set; }
         public static string DefaultUserAgent { get; }
         public System.Uri ResolveBaseAddress() { }
+        public System.Uri ResolveStreamingAddress() { }
+    }
+    public enum StreamingOverflowMode
+    {
+        DropOldest = 0,
+        DropNewest = 1,
     }
 }
 namespace IbkrDotNet.Trading.Http
@@ -3150,6 +3181,65 @@ namespace IbkrDotNet.Trading.Models.Session
         public long? UserId { get; init; }
     }
 }
+namespace IbkrDotNet.Trading.Models.Streaming
+{
+    public sealed class StreamingAuthenticationStatus : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingAuthenticationStatus>
+    {
+        public StreamingAuthenticationStatus() { }
+        [System.Text.Json.Serialization.JsonPropertyName("args")]
+        public IbkrDotNet.Trading.Models.Session.BrokerageSessionStatus? Args { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("topic")]
+        public string? Topic { get; init; }
+    }
+    public sealed class StreamingBulletin : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingBulletin>
+    {
+        public StreamingBulletin() { }
+        [System.Text.Json.Serialization.JsonPropertyName("args")]
+        public IbkrDotNet.Trading.Models.Streaming.StreamingBulletinArgs? Args { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("topic")]
+        public string? Topic { get; init; }
+    }
+    public sealed class StreamingBulletinArgs : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingBulletinArgs>
+    {
+        public StreamingBulletinArgs() { }
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public string? Id { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("message")]
+        public string? Message { get; init; }
+    }
+    public sealed class StreamingNotification : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingNotification>
+    {
+        public StreamingNotification() { }
+        [System.Text.Json.Serialization.JsonPropertyName("args")]
+        public IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs? Args { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("topic")]
+        public string? Topic { get; init; }
+    }
+    public sealed class StreamingNotificationArgs : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs>
+    {
+        public StreamingNotificationArgs() { }
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public string? Id { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("text")]
+        public string? Text { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("title")]
+        public string? Title { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("url")]
+        public string? Url { get; init; }
+    }
+    public sealed class StreamingSystemMessage : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingSystemMessage>
+    {
+        public StreamingSystemMessage() { }
+        [System.Text.Json.Serialization.JsonConverter(typeof(IbkrDotNet.Trading.Serialization.Converters.InstantEpochMillisecondsConverter?))]
+        [System.Text.Json.Serialization.JsonPropertyName("hb")]
+        public NodaTime.Instant? Heartbeat { get; init; }
+        public bool IsHeartbeat { get; }
+        [System.Text.Json.Serialization.JsonPropertyName("success")]
+        public string? Success { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("topic")]
+        public string? Topic { get; init; }
+    }
+}
 namespace IbkrDotNet.Trading.Models.Watchlists
 {
     public sealed class CreateWatchlistRow : System.IEquatable<IbkrDotNet.Trading.Models.Watchlists.CreateWatchlistRow>
@@ -3550,6 +3640,120 @@ namespace IbkrDotNet.Trading.Session
         public System.Threading.Tasks.Task<IbkrDotNet.Trading.Models.Session.BrokerageSessionStatus> GetStatusAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task<IbkrDotNet.Trading.Models.Session.TickleResponse> KeepAliveAsync(System.Threading.CancellationToken cancellationToken = default) { }
         public System.Threading.Tasks.Task<IbkrDotNet.Trading.Models.Session.LogoutResponse> LogoutAsync(System.Threading.CancellationToken cancellationToken = default) { }
+    }
+}
+namespace IbkrDotNet.Trading.Streaming
+{
+    public sealed class ClientWebSocketConnector : IbkrDotNet.Trading.Streaming.IIbkrWebSocketConnector
+    {
+        public ClientWebSocketConnector() { }
+        public static IbkrDotNet.Trading.Streaming.ClientWebSocketConnector Instance { get; }
+        public System.Threading.Tasks.Task<System.Net.WebSockets.WebSocket> ConnectAsync(IbkrDotNet.Trading.Streaming.StreamingConnectRequest request, System.Threading.CancellationToken cancellationToken) { }
+    }
+    public interface IIbkrStreamingTransport : System.IAsyncDisposable
+    {
+        bool? IsBrokerageSessionAuthenticated { get; }
+        NodaTime.Instant? LastHeartbeatAt { get; }
+        IbkrDotNet.Trading.Streaming.StreamingConnectionState State { get; }
+        System.Threading.Tasks.Task CloseAsync(System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task ConnectAsync(System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task SendAsync(string frame, System.Threading.CancellationToken cancellationToken = default);
+        System.Threading.Tasks.Task<IbkrDotNet.Trading.Streaming.StreamingSubscription> SubscribeAsync(IbkrDotNet.Trading.Streaming.StreamingSubscriptionRequest request, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public interface IIbkrWebSocketConnector
+    {
+        System.Threading.Tasks.Task<System.Net.WebSockets.WebSocket> ConnectAsync(IbkrDotNet.Trading.Streaming.StreamingConnectRequest request, System.Threading.CancellationToken cancellationToken);
+    }
+    public sealed class IbkrStreamingException : IbkrDotNet.Trading.Http.IbkrApiException
+    {
+        public IbkrStreamingException(string message) { }
+        public IbkrStreamingException(string message, System.Exception innerException) { }
+    }
+    public sealed class IbkrStreamingTransport : IbkrDotNet.Trading.Streaming.IIbkrStreamingTransport, System.IAsyncDisposable
+    {
+        public IbkrStreamingTransport(IbkrDotNet.Trading.Session.IIbkrSessionManager sessionManager, IbkrDotNet.Trading.Authentication.IbkrSessionState sessionState, IbkrDotNet.Trading.Authentication.IIbkrAuthenticator authenticator, Microsoft.Extensions.Options.IOptions<IbkrDotNet.Trading.Configuration.IbkrTradingOptions> options, NodaTime.IClock clock, Microsoft.Extensions.Logging.ILogger<IbkrDotNet.Trading.Streaming.IbkrStreamingTransport> logger) { }
+        public IbkrStreamingTransport(IbkrDotNet.Trading.Session.IIbkrSessionManager sessionManager, IbkrDotNet.Trading.Authentication.IbkrSessionState sessionState, IbkrDotNet.Trading.Authentication.IIbkrAuthenticator authenticator, IbkrDotNet.Trading.Streaming.IIbkrWebSocketConnector connector, Microsoft.Extensions.Options.IOptions<IbkrDotNet.Trading.Configuration.IbkrTradingOptions> options, NodaTime.IClock clock, Microsoft.Extensions.Logging.ILogger<IbkrDotNet.Trading.Streaming.IbkrStreamingTransport> logger) { }
+        public bool? IsBrokerageSessionAuthenticated { get; }
+        public NodaTime.Instant? LastHeartbeatAt { get; }
+        public IbkrDotNet.Trading.Streaming.StreamingConnectionState State { get; }
+        public System.Threading.Tasks.Task CloseAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task ConnectAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.ValueTask DisposeAsync() { }
+        public System.Threading.Tasks.Task SendAsync(string frame, System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.Task<IbkrDotNet.Trading.Streaming.StreamingSubscription> SubscribeAsync(IbkrDotNet.Trading.Streaming.StreamingSubscriptionRequest request, System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class StreamingConnectRequest : System.IEquatable<IbkrDotNet.Trading.Streaming.StreamingConnectRequest>
+    {
+        public StreamingConnectRequest(System.Uri Address, System.Collections.Generic.IReadOnlyDictionary<string, string> Headers, System.Action<System.Net.WebSockets.ClientWebSocketOptions>? Configure) { }
+        public System.Uri Address { get; init; }
+        public System.Action<System.Net.WebSockets.ClientWebSocketOptions>? Configure { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> Headers { get; init; }
+    }
+    public enum StreamingConnectionState
+    {
+        Disconnected = 0,
+        Connecting = 1,
+        Connected = 2,
+        Reconnecting = 3,
+    }
+    public static class StreamingFrame
+    {
+        public const char Separator = '+';
+        public static object EmptyParameters { get; }
+        public static string Encode(string topic, string? target = null, object? parameters = null) { }
+    }
+    public sealed class StreamingMessage
+    {
+        public StreamingMessage(string topic, System.Text.Json.JsonElement body, NodaTime.Instant receivedAt) { }
+        public System.Text.Json.JsonElement Body { get; }
+        public NodaTime.Instant ReceivedAt { get; }
+        public string Topic { get; }
+        public T Deserialize<T>() { }
+        public override string ToString() { }
+    }
+    public sealed class StreamingSubscription : System.IAsyncDisposable
+    {
+        public long DroppedMessages { get; }
+        public bool IsCompleted { get; }
+        public IbkrDotNet.Trading.Streaming.StreamingSubscriptionRequest Request { get; }
+        public System.Threading.Tasks.ValueTask DisposeAsync() { }
+        public System.Collections.Generic.IAsyncEnumerable<IbkrDotNet.Trading.Streaming.StreamingMessage> ReadAllAsync(System.Threading.CancellationToken cancellationToken = default) { }
+        public System.Threading.Tasks.ValueTask<IbkrDotNet.Trading.Streaming.StreamingMessage> ReadAsync(System.Threading.CancellationToken cancellationToken = default) { }
+    }
+    public sealed class StreamingSubscriptionRequest : System.IEquatable<IbkrDotNet.Trading.Streaming.StreamingSubscriptionRequest>
+    {
+        public StreamingSubscriptionRequest() { }
+        public int? BufferCapacity { get; init; }
+        public bool IsSolicited { get; init; }
+        public bool MatchResponseTopicPrefix { get; init; }
+        public object? Parameters { get; init; }
+        public string? ResponseTopic { get; init; }
+        public string RoutingKey { get; }
+        public string? SubscribeFrame { get; }
+        public string? Target { get; init; }
+        public required string Topic { get; init; }
+        public string? UnsubscribeFrame { get; }
+        public string? UnsubscribeTopic { get; init; }
+        public bool Matches(string inboundTopic) { }
+        public static IbkrDotNet.Trading.Streaming.StreamingSubscriptionRequest Solicited(string topic, string? target = null, object? parameters = null) { }
+        public static IbkrDotNet.Trading.Streaming.StreamingSubscriptionRequest Unsolicited(string topic) { }
+    }
+    public static class StreamingTopics
+    {
+        public const string AccountLedger = "sld";
+        public const string AccountSummary = "ssd";
+        public const string AccountUpdates = "act";
+        public const string AuthenticationStatus = "sts";
+        public const string Bulletins = "blt";
+        public const string HistoricalMarketData = "smh";
+        public const string KeepAlive = "tic";
+        public const string MarketData = "smd";
+        public const string Notifications = "ntf";
+        public const string OrderUpdates = "sor";
+        public const string PriceLadder = "sbd";
+        public const string ProfitAndLoss = "spl";
+        public const string System = "system";
+        public const string Trades = "str";
     }
 }
 namespace IbkrDotNet.Trading.Time

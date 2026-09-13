@@ -49,4 +49,19 @@ public interface IIbkrAuthenticator
     /// <param name="cancellationToken">Cancels the operation.</param>
     /// <exception cref="Http.IbkrAuthenticationException">Credentials could not be obtained.</exception>
     ValueTask AuthenticateAsync(HttpRequestMessage request, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Returns the credential the WebSocket upgrade request must carry as a query parameter, or
+    /// <see langword="null"/> when the mechanism needs nothing beyond the session cookie.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <remarks>
+    /// The socket is opened once and cannot be re-signed per message, so IBKR takes the credential
+    /// on the upgrade request instead: <c>bearer_token</c> for OAuth 2.0 and <c>oauth_token</c> for
+    /// OAuth 1.0a. The default answers <see langword="null"/>, which is right for the Client Portal
+    /// Gateway and for any mechanism that has no such parameter.
+    /// </remarks>
+    /// <exception cref="Http.IbkrAuthenticationException">Credentials could not be obtained.</exception>
+    ValueTask<StreamingCredential?> GetStreamingCredentialAsync(CancellationToken cancellationToken) =>
+        ValueTask.FromResult<StreamingCredential?>(null);
 }

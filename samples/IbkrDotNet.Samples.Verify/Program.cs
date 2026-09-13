@@ -20,6 +20,9 @@
 // identifier, read back and deleted again, and the identifier is checked against the existing lists
 // first so nothing the user made is displaced.
 //
+// The streaming checks open the WebSocket, read what IBKR sends on connect, ping it, wait for a
+// heartbeat and close it. No topic is subscribed; the transport is what is being verified.
+//
 // No credential is read, stored or printed here. The gateway holds the login and this talks to it
 // over loopback, so there is nothing to configure and nothing to leak. The account identifier is
 // discovered at runtime and masked on the way out, because this output is meant to be pasted into a
@@ -29,14 +32,18 @@ using System.Net.Security;
 using IbkrDotNet.Extensions.DependencyInjection;
 using IbkrDotNet.Samples.Verify;
 using IbkrDotNet.Trading;
+using IbkrDotNet.Trading.Authentication;
 using IbkrDotNet.Trading.Configuration;
 using IbkrDotNet.Trading.Http;
 using IbkrDotNet.Trading.Primitives;
+using IbkrDotNet.Trading.Session;
+using IbkrDotNet.Trading.Streaming;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NodaTime;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -58,6 +65,16 @@ if (builder.Configuration.GetValue("TrustGatewayCertificate", defaultValue: fals
             ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
                 errors == SslPolicyErrors.None || request.RequestUri?.IsLoopback is true,
         });
+
+    // The WebSocket upgrade does not go through that handler, so the same loopback-only relaxation
+    // is applied to the socket separately.
+    builder.Services.Configure<IbkrTradingOptions>(o =>
+    {
+        var loopback = o.ResolveBaseAddress().IsLoopback;
+        o.Streaming.ConfigureClientWebSocket = ws =>
+            ws.RemoteCertificateValidationCallback = (_, _, _, errors) =>
+                errors == SslPolicyErrors.None || loopback;
+    });
 }
 
 using var host = builder.Build();
@@ -100,6 +117,19 @@ Console.WriteLine($"Account: {Mask(account)}");
 
 var probe = new Probe(account.Value, Mask(account));
 var context = await ReadOnlyChecks.RunAsync(ibkr, probe, account, cancellationToken);
+
+// Built by hand until the dependency injection package registers it.
+await using (var streaming = new IbkrStreamingTransport(
+    host.Services.GetRequiredService<IIbkrSessionManager>(),
+    host.Services.GetRequiredService<IbkrSessionState>(),
+    host.Services.GetRequiredService<IIbkrAuthenticator>(),
+    host.Services.GetRequiredService<IOptions<IbkrTradingOptions>>(),
+    host.Services.GetRequiredService<IClock>(),
+    host.Services.GetRequiredService<ILogger<IbkrStreamingTransport>>()))
+{
+    await StreamingChecks.RunAsync(streaming, probe, cancellationToken);
+}
+
 await WatchlistChecks.RunAsync(ibkr, probe, context, cancellationToken);
 await ScannerChecks.RunAsync(ibkr, probe, cancellationToken);
 await NotificationChecks.RunAsync(ibkr, probe, cancellationToken);

@@ -1,0 +1,9 @@
+{
+    "topic": "ntf",
+    "args": {
+        "id": "id",
+        "text": "text",
+        "title": "title",
+        "url": "url"
+    }
+}

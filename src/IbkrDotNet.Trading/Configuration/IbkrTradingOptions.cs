@@ -37,6 +37,9 @@ public sealed class IbkrTradingOptions
     /// <summary>Rate limiting behaviour.</summary>
     public IbkrRateLimitingOptions RateLimiting { get; set; } = new();
 
+    /// <summary>The WebSocket transport that streaming topics run over.</summary>
+    public IbkrStreamingOptions Streaming { get; set; } = new();
+
     /// <summary>
     /// The default <c>User-Agent</c>, identifying this library and its version.
     /// </summary>
@@ -46,6 +49,27 @@ public sealed class IbkrTradingOptions
     /// <summary>Resolves the base address this client should use.</summary>
     public Uri ResolveBaseAddress() =>
         BaseAddress ?? IbkrEnvironments.GetBaseAddress(Environment);
+
+    /// <summary>
+    /// Resolves the WebSocket address this client should open: <see cref="IbkrStreamingOptions.Address"/>
+    /// when set, otherwise <c>/v1/api/ws</c> under the base address with the scheme swapped to
+    /// <c>wss</c>.
+    /// </summary>
+    public Uri ResolveStreamingAddress()
+    {
+        if (Streaming.Address is { } explicitAddress)
+        {
+            return explicitAddress;
+        }
+
+        var http = ResolveBaseAddress();
+        var scheme = string.Equals(http.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+            ? Uri.UriSchemeWs
+            : Uri.UriSchemeWss;
+        var port = http.IsDefaultPort ? string.Empty : $":{http.Port.ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
+        return new Uri($"{scheme}://{http.Host}{port}{IbkrEnvironments.TradingPathPrefix}/ws");
+    }
 }
 
 /// <summary>
