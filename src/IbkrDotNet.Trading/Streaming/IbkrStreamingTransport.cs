@@ -392,10 +392,20 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, connection.Cts.Token);
 
-        // A WebSocket permits one send at a time.
-        await _sendGate.WaitAsync(linked.Token).ConfigureAwait(false);
+        // The wait for the gate sits inside the try with the send: a connection lost while a frame
+        // waits its turn is the same lost line as one that fails mid-send, and surfaces the same way.
+        var acquired = false;
         try
         {
+            // A WebSocket permits one send at a time.
+            await _sendGate.WaitAsync(linked.Token).ConfigureAwait(false);
+            acquired = true;
+
+            // The gate can be won in the same instant the connection is lost: the runtime grants a
+            // wait whose token was already cancelled when the release lands first. Nothing goes out
+            // on a line that is gone.
+            linked.Token.ThrowIfCancellationRequested();
+
             StreamingLog.Sending(_logger, topic);
             await connection.Socket
                 .SendAsync(payload, WebSocketMessageType.Text, endOfMessage: true, linked.Token)
@@ -411,7 +421,10 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
         }
         finally
         {
-            _sendGate.Release();
+            if (acquired)
+            {
+                _sendGate.Release();
+            }
         }
     }
 

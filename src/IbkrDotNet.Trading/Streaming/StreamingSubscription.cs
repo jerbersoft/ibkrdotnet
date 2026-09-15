@@ -14,7 +14,9 @@ namespace IbkrDotNet.Trading.Streaming;
 /// </para>
 /// <para>
 /// Disposing sends the unsubscribe frame, where the request has one. Do it in a <c>finally</c>: a
-/// market data stream left open keeps consuming one of the account's market data lines.
+/// market data stream left open keeps consuming one of the account's market data lines. Disposing
+/// does not throw when the socket has gone: an unsubscribe frame that cannot be sent is logged, and
+/// IBKR released the line with the connection.
 /// </para>
 /// </remarks>
 public sealed class StreamingSubscription : IAsyncDisposable

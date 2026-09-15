@@ -4,7 +4,6 @@ using IbkrDotNet.Trading.Configuration;
 using IbkrDotNet.Trading.Http;
 using IbkrDotNet.Trading.Streaming;
 using IbkrDotNet.Trading.Tests.TestSupport;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using NodaTime;
 using NodaTime.Testing;
@@ -20,6 +19,9 @@ public class StreamingTransportTests
 
     private static readonly StreamingSubscriptionRequest IbmTopOfBook =
         StreamingSubscriptionRequest.Solicited("smd", "8314", new { fields = LastAndBid });
+
+    private static readonly StreamingSubscriptionRequest AppleTopOfBook =
+        StreamingSubscriptionRequest.Solicited("smd", "265598", new { fields = LastAndBid });
 
     private const string IbmFrame = """smd+8314+{"fields":["31","84"]}""";
 
@@ -46,10 +48,12 @@ public class StreamingTransportTests
                 Connector,
                 Options.Create(options),
                 Clock,
-                NullLogger<IbkrStreamingTransport>.Instance);
+                Logger);
         }
 
         public IbkrStreamingTransport Transport { get; }
+
+        public FakeLogger<IbkrStreamingTransport> Logger { get; } = new();
 
         public FakeWebSocketConnector Connector { get; }
 
@@ -195,6 +199,34 @@ public class StreamingTransportTests
     }
 
     [Fact]
+    public async Task Disposing_a_subscription_whose_unsubscribe_is_waiting_when_the_socket_drops_does_not_throw()
+    {
+        var ct = Within();
+        await using var harness = new Harness(o => o.Streaming.Reconnect = false);
+        var subscription = await harness.Transport.SubscribeAsync(IbmTopOfBook, ct);
+        await harness.Socket.NextSentAsync(ct);
+
+        // Another subscribe holds the send gate: its frame reached the socket, and the socket never
+        // completes the send.
+        harness.Socket.HoldSends();
+        var opening = harness.Transport.SubscribeAsync(AppleTopOfBook, ct);
+        await harness.Socket.NextSentAsync(ct);
+
+        // The unsubscribe frame queues behind it, and then the line drops.
+        var disposing = subscription.DisposeAsync().AsTask();
+        harness.Socket.Drop();
+
+        await disposing;
+        await Assert.ThrowsAsync<IbkrStreamingException>(() => opening);
+
+        // The lost line was reported the way one lost mid-send is, and the frame never went out.
+        var failure = Assert.Single(harness.Logger.Entries, e => e.EventId.Name == "UnsubscribeFailed");
+        Assert.IsType<IbkrStreamingException>(failure.Exception);
+        Assert.DoesNotContain("umd+8314+{}", harness.Socket.Sent);
+        Assert.True(subscription.IsCompleted);
+    }
+
+    [Fact]
     public async Task Reassembles_a_message_the_socket_delivers_in_pieces()
     {
         var ct = Within();
@@ -298,6 +330,51 @@ public class StreamingTransportTests
         await harness.Transport.SendAsync("tic", ct);
 
         Assert.Equal("tic", await harness.Socket.NextSentAsync(ct));
+    }
+
+    [Fact]
+    public async Task A_send_waiting_its_turn_when_the_socket_drops_fails_the_same_way_as_one_mid_send()
+    {
+        var ct = Within();
+        await using var harness = new Harness(o => o.Streaming.Reconnect = false);
+        await harness.Transport.ConnectAsync(ct);
+
+        harness.Socket.HoldSends();
+        var midSend = harness.Transport.SendAsync("tic", ct);
+        await harness.Socket.NextSentAsync(ct);
+        var waiting = harness.Transport.SendAsync("tic", ct);
+
+        harness.Socket.Drop();
+
+        var lost = await Assert.ThrowsAsync<IbkrStreamingException>(() => waiting);
+        Assert.Contains("closed", lost.Message, StringComparison.Ordinal);
+        await Assert.ThrowsAsync<IbkrStreamingException>(() => midSend);
+        Assert.Equal(["tic"], harness.Socket.Sent);
+    }
+
+    [Fact]
+    public async Task A_send_waiting_its_turn_still_honours_the_callers_cancellation()
+    {
+        var ct = Within();
+        await using var harness = new Harness();
+        await harness.Transport.ConnectAsync(ct);
+
+        harness.Socket.HoldSends();
+        var midSend = harness.Transport.SendAsync("tic", ct);
+        await harness.Socket.NextSentAsync(ct);
+        using var caller = new CancellationTokenSource();
+        var waiting = harness.Transport.SendAsync("tic", caller.Token);
+
+        caller.Cancel();
+
+        // The caller's own cancellation is theirs to see; only the connection's is a lost line.
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => waiting);
+
+        // The line is fine: the send in progress completes once the socket lets it.
+        harness.Socket.ReleaseSends();
+        await midSend;
+        Assert.Equal(["tic"], harness.Socket.Sent);
+        Assert.Equal(StreamingConnectionState.Connected, harness.Transport.State);
     }
 
     [Fact]
