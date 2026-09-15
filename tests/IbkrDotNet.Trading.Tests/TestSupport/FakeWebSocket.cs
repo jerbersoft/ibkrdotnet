@@ -18,6 +18,7 @@ public sealed class FakeWebSocket : WebSocket
     private int _pendingOffset;
     private volatile WebSocketState _state = WebSocketState.Open;
     private WebSocketCloseStatus? _closeStatus;
+    private TaskCompletionSource? _hold;
 
     public override WebSocketCloseStatus? CloseStatus => _closeStatus;
 
@@ -54,6 +55,17 @@ public sealed class FakeWebSocket : WebSocket
     public void Drop() =>
         _inbound.Writer.TryComplete(
             new WebSocketException(WebSocketError.ConnectionClosedPrematurely, "The connection dropped."));
+
+    /// <summary>
+    /// Holds every send open from here on, the way a stalled network would, until
+    /// <see cref="ReleaseSends"/>. A held frame is still recorded as sent, so a test can wait for it
+    /// with <see cref="NextSentAsync"/> and know the transport is inside the send.
+    /// </summary>
+    public void HoldSends() =>
+        Volatile.Write(ref _hold, new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously));
+
+    /// <summary>Lets the held sends complete and stops holding new ones.</summary>
+    public void ReleaseSends() => Interlocked.Exchange(ref _hold, null)?.TrySetResult();
 
     /// <summary>Waits for the next frame the transport sends.</summary>
     public async Task<string> NextSentAsync(CancellationToken cancellationToken) =>
@@ -141,7 +153,7 @@ public sealed class FakeWebSocket : WebSocket
         return new WebSocketReceiveResult(count, WebSocketMessageType.Text, endOfMessage);
     }
 
-    public override Task SendAsync(
+    public override async Task SendAsync(
         ArraySegment<byte> buffer,
         WebSocketMessageType messageType,
         bool endOfMessage,
@@ -159,7 +171,11 @@ public sealed class FakeWebSocket : WebSocket
         }
 
         _sent.Writer.TryWrite(text);
-        return Task.CompletedTask;
+
+        if (Volatile.Read(ref _hold) is { } hold)
+        {
+            await hold.Task.WaitAsync(cancellationToken);
+        }
     }
 
     private sealed record Inbound(byte[] Data, WebSocketMessageType Type);
