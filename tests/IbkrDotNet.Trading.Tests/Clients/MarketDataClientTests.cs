@@ -166,6 +166,81 @@ public class MarketDataClientTests
         Assert.Empty(harness.Stub.Requests);
     }
 
+    // The fixture below ends '.live.json'. IBKR's published example carries a volumeFactor of 100 and
+    // a volume of zero on every bar, so it cannot show what the factor does; this is a recorded
+    // answer whose factor is 40 and whose bars traded.
+    [Fact]
+    public async Task Multiplies_a_bars_volume_by_the_responses_volume_factor()
+    {
+        using var harness = new ClientHarness();
+        harness.RespondWithFixture("trading-market-data/get-md-history.live.json");
+        var client = new MarketDataClient(harness.ApiClient);
+
+        var history = await client.GetHistoryAsync(
+            Aapl,
+            HistoryPeriod.OneMonth,
+            BarSize.OneDay,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        // 'v' is the share count divided by volumeFactor, so the wire's number is not a volume. A
+        // snapshot taken at the same moment put AAPL's day at 5,660,173 shares: the last bar's
+        // 142,573.625 is nothing like it, and 142,573.625 x 40 is, to within the bar lagging the
+        // tape and counting regular hours only.
+        Assert.Equal(40m, history.VolumeFactor);
+        Assert.Equal(700773.675m, history.Bars[0].RawVolume);
+        Assert.Equal(28_030_947m, history.Bars[0].Volume);
+        Assert.Equal(142573.625m, history.Bars[^1].RawVolume);
+        Assert.Equal(5_702_945m, history.Bars[^1].Volume);
+
+        // priceFactor scales the envelope's 'high' and 'low' summary strings -- 33622/847829.15/36000
+        // is a high of 336.22 -- and never a bar, whose prices arrive as prices.
+        Assert.Equal(100m, history.PriceFactor);
+        Assert.Equal(307.58m, history.Bars[0].Open);
+        Assert.Equal(329.43m, history.Bars[^1].Close);
+        Assert.Equal(336.22m, history.Bars.Max(bar => bar.High));
+    }
+
+    [Fact]
+    public async Task Reads_a_volume_as_sent_when_the_response_carries_no_factor()
+    {
+        using var harness = new ClientHarness();
+        harness.RespondWithJson("""
+            {"symbol":"AAPL","data":[{"o":307.58,"c":310.03,"h":311.49,"l":305.74,
+              "v":700773.675,"t":1787059800000}]}
+            """);
+        var client = new MarketDataClient(harness.ApiClient);
+
+        var history = await client.GetHistoryAsync(
+            Aapl,
+            HistoryPeriod.OneWeek,
+            BarSize.OneDay,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Null(history.VolumeFactor);
+        Assert.Equal(700773.675m, history.Bars[0].RawVolume);
+        Assert.Equal(700773.675m, history.Bars[0].Volume);
+    }
+
+    // IBKR sends volumeFactor after the bars in its own example and before them in the recorded
+    // answer, and a factor read second is still the factor for bars read first.
+    [Theory]
+    [InlineData("""{"volumeFactor":40,"data":[{"v":142573.625,"t":1789479000000}]}""")]
+    [InlineData("""{"data":[{"v":142573.625,"t":1789479000000}],"volumeFactor":40}""")]
+    public async Task Applies_the_volume_factor_whichever_side_of_the_bars_it_arrives(string json)
+    {
+        using var harness = new ClientHarness();
+        harness.RespondWithJson(json);
+        var client = new MarketDataClient(harness.ApiClient);
+
+        var history = await client.GetHistoryAsync(
+            Aapl,
+            HistoryPeriod.OneDay,
+            BarSize.OneDay,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.Equal(5_702_945m, history.Bars[0].Volume);
+    }
+
     [Fact]
     public async Task Closes_one_stream_and_then_all_of_them()
     {

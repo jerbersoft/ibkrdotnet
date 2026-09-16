@@ -66,6 +66,27 @@ parse IBKR's wire spelling if you have one already: `HistoryPeriod.Parse("6m")`,
 `startTime` fixes a reference point; leave it unset and the request runs from now, in which case `direction` has
 to stay at its default. IBKR permits five concurrent historical data requests.
 
+## A bar's volume is not what IBKR sends
+
+IBKR divides every bar's volume by a factor it puts on the envelope, and the factor is not constant: a live
+gateway answered `volumeFactor: 40` where IBKR's own published example uses `100`.
+
+```csharp
+bars.VolumeFactor        // 40
+bars.Bars[^1].RawVolume  // 142573.625 — the wire's 'v'
+bars.Bars[^1].Volume     // 5702945    — shares
+```
+
+`Volume` is the share count with the factor put back. `RawVolume` is the figure as sent, kept because the
+envelope's own `high` and `low` summary strings quote the volume unscaled.
+
+The wire's number looks like a volume and compares sensibly against other numbers read the same way, so reading
+it as one survives review — until it meets a volume from anywhere else, such as the day's volume in a snapshot,
+and the two are a factor of 40 apart.
+
+Prices are not scaled by anything. `priceFactor` divides the `high` and `low` summary strings, not a bar's `o`,
+`h`, `l` and `c`, which arrive as real prices.
+
 ## Bar timestamps
 
 Bars carry `Instant` values decoded from whichever encoding IBKR used for that field — epoch seconds in some

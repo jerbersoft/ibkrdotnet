@@ -1644,11 +1644,13 @@ namespace IbkrDotNet.Trading.Models.MarketData
         public decimal? Low { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("o")]
         public decimal? Open { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("v")]
+        public decimal? RawVolume { get; init; }
         [System.Text.Json.Serialization.JsonConverter(typeof(IbkrDotNet.Trading.Serialization.Converters.InstantEpochMillisecondsConverter))]
         [System.Text.Json.Serialization.JsonPropertyName("t")]
         public NodaTime.Instant? Start { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("v")]
-        public decimal? Volume { get; init; }
+        [System.Text.Json.Serialization.JsonIgnore]
+        public decimal? Volume { get; }
     }
     public sealed class HistoricalBars : System.IEquatable<IbkrDotNet.Trading.Models.MarketData.HistoricalBars>
     {
@@ -1672,6 +1674,8 @@ namespace IbkrDotNet.Trading.Models.MarketData
         public bool? OutsideRegularTradingHours { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("points")]
         public long? Points { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("priceFactor")]
+        public decimal? PriceFactor { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("serverId")]
         public string? ServerId { get; init; }
         [System.Text.Json.Serialization.JsonConverter(typeof(IbkrDotNet.Trading.Serialization.Converters.IbkrUtcDateTimeConverter?))]
@@ -1689,6 +1693,8 @@ namespace IbkrDotNet.Trading.Models.MarketData
         [System.Text.Json.Serialization.JsonConverter(typeof(IbkrDotNet.Trading.Serialization.Converters.DurationMillisecondsConverter?))]
         [System.Text.Json.Serialization.JsonPropertyName("travelTime")]
         public NodaTime.Duration? TravelTime { get; init; }
+        [System.Text.Json.Serialization.JsonPropertyName("volumeFactor")]
+        public decimal? VolumeFactor { get; init; }
     }
     public enum HistoricalDataDirection
     {

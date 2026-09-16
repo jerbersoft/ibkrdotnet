@@ -166,7 +166,8 @@ try
     Console.WriteLine($"\nLast {history.Bars.Count} daily bars:");
     foreach (var bar in history.Bars)
     {
-        Console.WriteLine($"  {bar.Start}  O {bar.Open}  H {bar.High}  L {bar.Low}  C {bar.Close}");
+        // Volume in shares: IBKR sends it divided by history.VolumeFactor, which the model puts back.
+        Console.WriteLine($"  {bar.Start}  O {bar.Open}  H {bar.High}  L {bar.Low}  C {bar.Close}  V {bar.Volume}");
     }
 
     // A preview only. Nothing below submits an order.
