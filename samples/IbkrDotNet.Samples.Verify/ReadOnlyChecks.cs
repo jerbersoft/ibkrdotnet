@@ -258,7 +258,13 @@ internal static class ReadOnlyChecks
         {
             var history = await ibkr.MarketData.GetHistoryAsync(
                 conId, HistoryPeriod.OneWeek, BarSize.OneDay, cancellationToken: cancellationToken);
-            return $"{history.Bars.Count} bar(s), last close {(history.Bars.Count > 0 ? history.Bars[^1].Close : null)}";
+
+            // The volume arrives divided by a factor that differs between responses -- 40 on one live
+            // gateway, 100 in IBKR's published example -- so the run prints both numbers and the
+            // factor between them, and a day IBKR changes it again shows up here.
+            var last = history.Bars.Count > 0 ? history.Bars[^1] : null;
+            return $"{history.Bars.Count} bar(s), last close {last?.Close}, " +
+                   $"volume {last?.Volume} (v={last?.RawVolume} x{history.VolumeFactor})";
         });
 
         await probe.RunAsync("POST /iserver/marketdata/unsubscribe", async () =>

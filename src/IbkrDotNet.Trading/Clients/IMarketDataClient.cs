@@ -48,7 +48,11 @@ public interface IMarketDataClient
     /// <param name="direction">Whether the period extends backwards from or forwards to the start time.</param>
     /// <param name="source">The type of price the bars are built from.</param>
     /// <param name="cancellationToken">Cancels the request.</param>
-    /// <remarks>IBKR permits five concurrent historical data requests.</remarks>
+    /// <remarks>
+    /// IBKR permits five concurrent historical data requests. A bar's volume arrives divided by a
+    /// factor the response carries: <see cref="HistoricalBar.Volume"/> is the share count with that
+    /// factor put back, and <see cref="HistoricalBars.VolumeFactor"/> is the divisor itself.
+    /// </remarks>
     Task<HistoricalBars> GetHistoryAsync(
         ConId conId,
         HistoryPeriod period,
