@@ -179,6 +179,28 @@ public class StreamingTransportTests
         Assert.Equal(Start, message.ReceivedAt);
     }
 
+    /// <remarks>
+    /// The Client Portal Gateway sends every frame as binary, session confirmations and heartbeats
+    /// included, so a transport that routes only text frames delivers nothing at all against a real
+    /// gateway while looking connected and healthy (#69).
+    /// </remarks>
+    [Fact]
+    public async Task Routes_a_binary_message_the_way_it_routes_a_text_one()
+    {
+        var ct = Within();
+        await using var harness = new Harness();
+
+        await using var subscription = await harness.Transport.SubscribeAsync(IbmTopOfBook, ct);
+        Assert.Equal(IbmFrame, await harness.Socket.NextSentAsync(ct));
+
+        harness.Socket.PushBinary("""{"topic":"smd+8314","31":"189.60"}""");
+
+        var message = await subscription.ReadAsync(ct);
+
+        Assert.Equal("smd+8314", message.Topic);
+        Assert.Equal("189.60", message.Body.GetProperty("31").GetString());
+    }
+
     [Fact]
     public async Task Disposing_a_subscription_sends_the_unsubscribe_frame_and_ends_the_enumeration()
     {
