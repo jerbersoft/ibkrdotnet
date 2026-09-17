@@ -48,6 +48,13 @@ public sealed class FakeWebSocket : WebSocket
     public void Push(string text) =>
         _inbound.Writer.TryWrite(new Inbound(Encoding.UTF8.GetBytes(text), WebSocketMessageType.Text));
 
+    /// <summary>
+    /// Queues the same UTF-8 JSON as a binary message. This is how a Client Portal Gateway sends
+    /// every frame it sends, session confirmations and heartbeats included.
+    /// </summary>
+    public void PushBinary(string text) =>
+        _inbound.Writer.TryWrite(new Inbound(Encoding.UTF8.GetBytes(text), WebSocketMessageType.Binary));
+
     /// <summary>Has the server close the socket cleanly.</summary>
     public void PushClose() => _inbound.Writer.TryWrite(new Inbound([], WebSocketMessageType.Close));
 
@@ -144,13 +151,16 @@ public sealed class FakeWebSocket : WebSocket
         Array.Copy(_pending.Data, _pendingOffset, buffer.Array!, buffer.Offset, count);
         _pendingOffset += count;
 
+        var type = _pending.Type;
         var endOfMessage = _pendingOffset == _pending.Data.Length;
         if (endOfMessage)
         {
             _pending = null;
         }
 
-        return new WebSocketReceiveResult(count, WebSocketMessageType.Text, endOfMessage);
+        // The type that was queued, not an assumption: a fake that always says Text cannot express
+        // a server that sends binary, which is what every Client Portal Gateway does.
+        return new WebSocketReceiveResult(count, type, endOfMessage);
     }
 
     public override async Task SendAsync(

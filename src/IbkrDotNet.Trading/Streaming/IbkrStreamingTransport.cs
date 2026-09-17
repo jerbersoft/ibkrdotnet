@@ -461,10 +461,11 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
                     break;
                 }
 
-                if (result.MessageType == WebSocketMessageType.Text)
-                {
-                    Dispatch(message.WrittenMemory);
-                }
+                // Text or binary, dispatched the same: the payload is UTF-8 JSON either way, and a
+                // Client Portal Gateway sends every frame as binary — session confirmations and
+                // heartbeats included. Close is the only other member of the enum and has already
+                // broken out above, so there is no third case to drop.
+                Dispatch(message.WrittenMemory);
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
