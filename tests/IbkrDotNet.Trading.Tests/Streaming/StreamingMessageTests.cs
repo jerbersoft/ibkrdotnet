@@ -20,6 +20,14 @@ public class StreamingMessageTests
         return new StreamingMessage(root.GetProperty("topic").GetString()!, root, ReceivedAt);
     }
 
+    /// <summary>Loads one frame of a fixture that recorded several.</summary>
+    private static StreamingMessage LoadFrame(string fixture, int index)
+    {
+        using var document = Fixture.ReadJson($"Responses/websocket/{fixture}");
+        var frame = document.RootElement[index].Clone();
+        return new StreamingMessage(frame.GetProperty("topic").GetString()!, frame, ReceivedAt);
+    }
+
     [Fact]
     public void Reads_the_documented_system_confirmation()
     {
@@ -59,8 +67,73 @@ public class StreamingMessageTests
 
         Assert.Equal("id", bulletin.Args?.Id);
         Assert.Equal("message", bulletin.Args?.Message);
-        Assert.Equal("title", notification.Args?.Title);
-        Assert.Equal("url", notification.Args?.Url);
+
+        // IBKR documents 'args' as a bare object and a gateway sends an array; the example still reads.
+        var notice = Assert.IsType<StreamingNotificationArgs.Notice>(Assert.Single(notification.Args));
+        Assert.Equal("title", notice.Title);
+        Assert.Equal("url", notice.Url);
+    }
+
+    [Fact]
+    public void Reads_a_recorded_notification_whose_args_is_an_array()
+    {
+        var notification = LoadFrame("notifications.live.json", 0).Deserialize<StreamingNotification>();
+
+        var notice = Assert.IsType<StreamingNotificationArgs.Notice>(Assert.Single(notification.Args));
+        Assert.Equal("118", notice.Id);
+        Assert.StartsWith("Order SELL 1 MSFT", notice.Text, StringComparison.Ordinal);
+        Assert.Null(notice.Title);
+        Assert.Null(notice.Url);
+    }
+
+    [Fact]
+    public void Reads_a_recorded_notification_that_is_a_prompt()
+    {
+        var notification = LoadFrame("notifications.live.json", 1).Deserialize<StreamingNotification>();
+
+        var prompt = Assert.IsType<StreamingNotificationArgs.Prompt>(Assert.Single(notification.Args));
+        Assert.Equal(1883733600, prompt.OrderId?.Value);
+        Assert.Equal("29042", prompt.RequestId);
+        Assert.Equal("p12", prompt.MessageId);
+        Assert.Equal("M", prompt.Type);
+        Assert.True(prompt.IsPrompt);
+        Assert.Empty(prompt.Dismissable);
+        Assert.Equal(["Use on this order", "Always use", "Do not use"], prompt.Options);
+        Assert.EndsWith("Use the Price Management Algo?", prompt.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Tells_a_notice_from_a_prompt_within_one_message()
+    {
+        // Nothing says IBKR sends the two shapes in separate frames, and the array is what would
+        // carry them together.
+        var body = JsonDocument.Parse(
+            """
+            {"topic":"ntf","args":[{"id":"118","text":"notice"},{"orderId":7,"reqId":"1","text":"question"}]}
+            """).RootElement.Clone();
+        var notification = new StreamingMessage("ntf", body, ReceivedAt).Deserialize<StreamingNotification>();
+
+        Assert.Collection(
+            notification.Args,
+            first => Assert.Equal("118", Assert.IsType<StreamingNotificationArgs.Notice>(first).Id),
+            second => Assert.Equal(7, Assert.IsType<StreamingNotificationArgs.Prompt>(second).OrderId?.Value));
+
+        // Both shapes answer the one question a caller has before anything else.
+        Assert.Equal(["notice", "question"], notification.Args.Select(arg => arg.Text));
+    }
+
+    [Fact]
+    public void Writes_a_prompt_back_as_the_shape_it_was_read_as()
+    {
+        var notification = LoadFrame("notifications.live.json", 1).Deserialize<StreamingNotification>();
+
+        var json = JsonSerializer.Serialize(notification, IbkrJson.Options);
+
+        using var written = JsonDocument.Parse(json);
+        var prompt = written.RootElement.GetProperty("args")[0];
+        Assert.Equal(1883733600, prompt.GetProperty("orderId").GetInt64());
+        Assert.Equal("p12", prompt.GetProperty("messageId").GetString());
+        Assert.False(prompt.TryGetProperty("url", out _));
     }
 
     [Fact]

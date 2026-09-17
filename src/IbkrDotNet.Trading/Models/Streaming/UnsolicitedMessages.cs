@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using IbkrDotNet.Trading.Models.Session;
+using IbkrDotNet.Trading.Primitives;
 using IbkrDotNet.Trading.Serialization.Converters;
 using NodaTime;
 
@@ -67,34 +68,107 @@ public sealed record StreamingBulletinArgs
     public string? Message { get; init; }
 }
 
-/// <summary>An <c>ntf</c> message: a brief notification about trading activity.</summary>
+/// <summary>An <c>ntf</c> message: notices and prompts about trading activity.</summary>
+/// <remarks>
+/// <c>args</c> carries a list. IBKR's published example shows one bare object and a live gateway
+/// sends an array, so both are read, and a single object is read as a one-element list — the same
+/// accommodation <c>sor</c> and <c>str</c> need, and for the same reason.
+/// </remarks>
 public sealed record StreamingNotification
 {
     /// <summary>The topic, <c>ntf</c>.</summary>
     [JsonPropertyName("topic")]
     public string? Topic { get; init; }
 
-    /// <summary>The notification.</summary>
+    /// <summary>The payloads, each a <see cref="StreamingNotificationArgs.Notice"/> or a
+    /// <see cref="StreamingNotificationArgs.Prompt"/>.</summary>
     [JsonPropertyName("args")]
-    public StreamingNotificationArgs? Args { get; init; }
+    [JsonConverter(typeof(SingleOrArrayConverter<StreamingNotificationArgs>))]
+    public IReadOnlyList<StreamingNotificationArgs> Args { get; init; } = [];
 }
 
-/// <summary>The body of a <see cref="StreamingNotification"/>.</summary>
-public sealed record StreamingNotificationArgs
+/// <summary>
+/// One payload of a <see cref="StreamingNotification"/>: a notice or a prompt.
+/// </summary>
+/// <remarks>
+/// <para>
+/// IBKR sends two unrelated things under the one topic. A notice reports something that happened and
+/// asks nothing — a warning that a resting order will be cancelled at a date, say. A prompt is a
+/// question about a named order, the same question the submission reply loop answers over REST,
+/// arriving unsolicited because something other than this client provoked it.
+/// </para>
+/// <para>
+/// They are separate types rather than one record with everything optional, so that answering a
+/// prompt does not begin with working out whether the payload was one.
+/// </para>
+/// </remarks>
+[JsonConverter(typeof(StreamingNotificationArgsConverter))]
+public abstract record StreamingNotificationArgs
 {
-    /// <summary>The notification's identifier.</summary>
-    [JsonPropertyName("id")]
-    public string? Id { get; init; }
+    private StreamingNotificationArgs()
+    {
+    }
 
-    /// <summary>The headline.</summary>
-    [JsonPropertyName("title")]
-    public string? Title { get; init; }
-
-    /// <summary>The body text.</summary>
+    /// <summary>The message text. The body of a notice, the question of a prompt.</summary>
     [JsonPropertyName("text")]
     public string? Text { get; init; }
 
-    /// <summary>Where to read more, when there is somewhere.</summary>
-    [JsonPropertyName("url")]
-    public string? Url { get; init; }
+    /// <summary>A notice: something that happened, with nothing to answer.</summary>
+    public sealed record Notice : StreamingNotificationArgs
+    {
+        /// <summary>The notice's identifier, which is IBKR's warning number.</summary>
+        [JsonPropertyName("id")]
+        public string? Id { get; init; }
+
+        /// <summary>The headline. Null on every recorded notice; IBKR's example fills it.</summary>
+        [JsonPropertyName("title")]
+        public string? Title { get; init; }
+
+        /// <summary>Where to read more, when there is somewhere.</summary>
+        [JsonPropertyName("url")]
+        public string? Url { get; init; }
+    }
+
+    /// <summary>A prompt: a question about an order, awaiting one of its options.</summary>
+    /// <remarks>
+    /// Answer it with <c>IOrdersClient.DismissServerPromptAsync</c>, passing <see cref="OrderId"/>,
+    /// <see cref="RequestId"/> and the chosen entry of <see cref="Options"/>. Leaving it unanswered
+    /// is a decision too: the order stands as IBKR already has it.
+    /// </remarks>
+    public sealed record Prompt : StreamingNotificationArgs
+    {
+        /// <summary>The order the question is about, by IBKR's own numeric identifier.</summary>
+        [JsonPropertyName("orderId")]
+        public OrderId? OrderId { get; init; }
+
+        /// <summary>IBKR's identifier for the question, passed back when it is answered.</summary>
+        [JsonPropertyName("reqId")]
+        public string? RequestId { get; init; }
+
+        /// <summary>
+        /// IBKR's identifier for the category of question, for example <c>p12</c>.
+        /// </summary>
+        /// <remarks>
+        /// The same categories <c>IOrdersClient.SuppressMessagesAsync</c> silences for the brokerage
+        /// session, so a question answered the same way every time need not be asked again.
+        /// </remarks>
+        [JsonPropertyName("messageId")]
+        public string? MessageId { get; init; }
+
+        /// <summary>The answers on offer, one of which is sent back verbatim.</summary>
+        [JsonPropertyName("options")]
+        public IReadOnlyList<string> Options { get; init; } = [];
+
+        /// <summary>The message type, for example <c>M</c>.</summary>
+        [JsonPropertyName("type")]
+        public string? Type { get; init; }
+
+        /// <summary>The ways the question may be dismissed without answering it.</summary>
+        [JsonPropertyName("dismissable")]
+        public IReadOnlyList<string> Dismissable { get; init; } = [];
+
+        /// <summary>IBKR's own marker that this payload is a question. Set on every one recorded.</summary>
+        [JsonPropertyName("prompt")]
+        public bool? IsPrompt { get; init; }
+    }
 }

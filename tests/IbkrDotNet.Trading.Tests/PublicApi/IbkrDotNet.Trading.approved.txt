@@ -3259,22 +3259,45 @@ namespace IbkrDotNet.Trading.Models.Streaming
     public sealed class StreamingNotification : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingNotification>
     {
         public StreamingNotification() { }
+        [System.Text.Json.Serialization.JsonConverter(typeof(IbkrDotNet.Trading.Serialization.Converters.SingleOrArrayConverter<IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs>))]
         [System.Text.Json.Serialization.JsonPropertyName("args")]
-        public IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs? Args { get; init; }
+        public System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs> Args { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("topic")]
         public string? Topic { get; init; }
     }
-    public sealed class StreamingNotificationArgs : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs>
+    [System.Text.Json.Serialization.JsonConverter(typeof(IbkrDotNet.Trading.Serialization.Converters.StreamingNotificationArgsConverter?))]
+    public abstract class StreamingNotificationArgs : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs>
     {
-        public StreamingNotificationArgs() { }
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        public string? Id { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("text")]
         public string? Text { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("title")]
-        public string? Title { get; init; }
-        [System.Text.Json.Serialization.JsonPropertyName("url")]
-        public string? Url { get; init; }
+        public sealed class Notice : IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs, System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs.Notice>
+        {
+            public Notice() { }
+            [System.Text.Json.Serialization.JsonPropertyName("id")]
+            public string? Id { get; init; }
+            [System.Text.Json.Serialization.JsonPropertyName("title")]
+            public string? Title { get; init; }
+            [System.Text.Json.Serialization.JsonPropertyName("url")]
+            public string? Url { get; init; }
+        }
+        public sealed class Prompt : IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs, System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs.Prompt>
+        {
+            public Prompt() { }
+            [System.Text.Json.Serialization.JsonPropertyName("dismissable")]
+            public System.Collections.Generic.IReadOnlyList<string> Dismissable { get; init; }
+            [System.Text.Json.Serialization.JsonPropertyName("prompt")]
+            public bool? IsPrompt { get; init; }
+            [System.Text.Json.Serialization.JsonPropertyName("messageId")]
+            public string? MessageId { get; init; }
+            [System.Text.Json.Serialization.JsonPropertyName("options")]
+            public System.Collections.Generic.IReadOnlyList<string> Options { get; init; }
+            [System.Text.Json.Serialization.JsonPropertyName("orderId")]
+            public IbkrDotNet.Trading.Primitives.OrderId? OrderId { get; init; }
+            [System.Text.Json.Serialization.JsonPropertyName("reqId")]
+            public string? RequestId { get; init; }
+            [System.Text.Json.Serialization.JsonPropertyName("type")]
+            public string? Type { get; init; }
+        }
     }
     public sealed class StreamingSystemMessage : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingSystemMessage>
     {
@@ -3649,6 +3672,12 @@ namespace IbkrDotNet.Trading.Serialization.Converters
         public SsoExpiryConverter() { }
         protected override IbkrDotNet.Trading.Time.SsoExpiry ReadValue(ref System.Text.Json.Utf8JsonReader reader) { }
         protected override void WriteValue(System.Text.Json.Utf8JsonWriter writer, IbkrDotNet.Trading.Time.SsoExpiry value) { }
+    }
+    public sealed class StreamingNotificationArgsConverter : System.Text.Json.Serialization.JsonConverter<IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs>
+    {
+        public StreamingNotificationArgsConverter() { }
+        public override IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs? Read(ref System.Text.Json.Utf8JsonReader reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options) { }
+        public override void Write(System.Text.Json.Utf8JsonWriter writer, IbkrDotNet.Trading.Models.Streaming.StreamingNotificationArgs value, System.Text.Json.JsonSerializerOptions options) { }
     }
     public sealed class TradingScheduleDateConverter : IbkrDotNet.Trading.Serialization.Converters.IbkrStructConverterFactory<IbkrDotNet.Trading.Time.TradingScheduleDate>
     {
