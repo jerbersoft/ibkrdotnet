@@ -1,0 +1,32 @@
+[
+    {
+        "topic": "ntf",
+        "args": [
+            {
+                "id": "118",
+                "text": "Order SELL 1 MSFT NASDAQ.NMS Limit 513.31 will be automatically canceled at 20261231 22:00:00 MET",
+                "title": null,
+                "url": null
+            }
+        ]
+    },
+    {
+        "topic": "ntf",
+        "args": [
+            {
+                "orderId": 1883733600,
+                "reqId": "29042",
+                "dismissable": [],
+                "text": "If your order is not immediately executable, our systems may, depending on market conditions, reject your order if its limit price is more than the allowed amount away from the reference price at that time. If this happens, you will not receive a fill. This is a control designed to ensure that we comply with our regulatory obligations to avoid submitting disruptive orders to the marketplace.\nUse the Price Management Algo?",
+                "options": [
+                    "Use on this order",
+                    "Always use",
+                    "Do not use"
+                ],
+                "type": "M",
+                "messageId": "p12",
+                "prompt": true
+            }
+        ]
+    }
+]

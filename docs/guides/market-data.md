@@ -170,3 +170,31 @@ unsolicited topics — `system`, `sts`, `act`, `blt` and `ntf` — are read with
 `StreamingSubscriptionRequest.Unsolicited`, which only registers to be routed to. IBKR sends the first `system` and `sts` messages on connect, so register
 for those *before* the socket opens or you will race them. `ibkr.Streaming.IsBrokerageSessionAuthenticated` and
 `LastHeartbeatAt` are the transport's own reading of those two topics, kept whether or not anybody subscribes.
+
+**`ntf` carries two different things.** A notice reports something that happened and asks nothing — warning 118
+dating a resting order's automatic cancellation, say. A prompt is a question about an order, one of the same
+questions an order submission answers over REST, arriving unsolicited because something other than this client
+provoked it. They are separate types under one `Args` list, which IBKR documents as a bare object and a gateway
+sends as an array:
+
+```csharp
+foreach (var arg in message.Deserialize<StreamingNotification>().Args)
+{
+    switch (arg)
+    {
+        case StreamingNotificationArgs.Notice notice:
+            logger.LogInformation("IBKR {Id}: {Text}", notice.Id, notice.Text);
+            break;
+
+        case StreamingNotificationArgs.Prompt prompt:
+            // OrderId is IBKR's own numeric identifier for the order, not the one you supplied, and
+            // the answer is one of prompt.Options sent back verbatim.
+            await ibkr.Orders.DismissServerPromptAsync(
+                prompt.OrderId!.Value, prompt.RequestId!, prompt.Options[0], ct);
+            break;
+    }
+}
+```
+
+Answering is a trading decision, so nothing answers one for you. Left alone, the order stands as IBKR already has
+it; `SuppressMessagesAsync` takes the prompt's `MessageId` when the answer is always going to be the same one.
