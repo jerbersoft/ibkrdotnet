@@ -457,6 +457,7 @@ namespace IbkrDotNet.Trading.Configuration
         public bool Reconnect { get; set; }
         public NodaTime.Duration ReconnectDelay { get; set; }
         public NodaTime.Duration ReconnectMaxDelay { get; set; }
+        public NodaTime.Duration SessionConfirmationTimeout { get; set; }
         public void Validate() { }
     }
     public sealed class IbkrTradingOptions

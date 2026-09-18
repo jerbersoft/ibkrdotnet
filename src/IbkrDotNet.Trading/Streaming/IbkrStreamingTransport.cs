@@ -345,11 +345,17 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
 
             var connection = new Connection(socket);
             Volatile.Write(ref _connection, connection);
-            SetState(StreamingConnectionState.Connected);
 
             connection.ReadLoop = RunReadLoopAsync(connection);
             connection.KeepAlive = RunKeepAliveAsync(connection);
 
+            // The socket being open is not the session being open. Everything that writes goes
+            // through SendCoreAsync, which holds its frame until this completes; the open itself
+            // waits so that a gateway which never confirms fails here, loudly, rather than leaving
+            // every later send to time out one at a time.
+            await AwaitSessionAsync(connection, visible, cancellationToken).ConfigureAwait(false);
+
+            SetState(StreamingConnectionState.Connected);
             StreamingLog.Opened(_logger, visible);
         }
         catch
@@ -372,6 +378,62 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
         var separator = string.IsNullOrEmpty(existing) ? "?" : "&";
 
         return new Uri(address.GetLeftPart(UriPartial.Path) + existing + separator + parameter);
+    }
+
+    /// <summary>
+    /// Waits for IBKR to confirm the session on a socket that has just opened.
+    /// </summary>
+    /// <remarks>
+    /// A Client Portal Gateway writes <c>WebSocket handshake complete</c> locally and only afterwards
+    /// <c>connected to server</c>; a frame written in that gap is discarded without a reply, so the
+    /// subscription it carried delivers nothing for the life of the connection and nothing says so.
+    /// </remarks>
+    private async Task AwaitSessionAsync(Connection connection, string visible, CancellationToken cancellationToken)
+    {
+        var timeout = _options.Streaming.SessionConfirmationTimeout;
+        if (timeout <= Duration.Zero)
+        {
+            // Turned off deliberately: the gate opens with the socket, as it did before.
+            connection.Confirm();
+            return;
+        }
+
+        using var expiry = new CancellationTokenSource(timeout.ToTimeSpan());
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            cancellationToken, connection.Cts.Token, expiry.Token);
+
+        try
+        {
+            await connection.Confirmed.WaitAsync(linked.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // The socket is unusable either way, and it is this method that opened it.
+            await AbandonAsync(connection).ConfigureAwait(false);
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+
+            throw new IbkrStreamingException(
+                $"The WebSocket at {visible} opened but IBKR did not confirm the session within {timeout}, " +
+                "so nothing was sent on it: a frame written before the confirmation is discarded by the " +
+                "gateway without a reply. Raise IbkrStreamingOptions.SessionConfirmationTimeout, or set it " +
+                "to zero to send as soon as the socket opens.");
+        }
+    }
+
+    /// <summary>Tears down a connection this class opened and is giving up on.</summary>
+    private async Task AbandonAsync(Connection connection)
+    {
+        // Out of the field first, so the read loop ending underneath sees a connection that is no
+        // longer current and leaves it here rather than reconnecting on it.
+        Interlocked.CompareExchange(ref _connection, null, connection);
+        await connection.Cts.CancelAsync().ConfigureAwait(false);
+        await connection.KeepAlive.ConfigureAwait(false);
+        await connection.ReadLoop.ConfigureAwait(false);
+        connection.Dispose();
     }
 
     private async Task ResubscribeAsync(CancellationToken cancellationToken)
@@ -397,6 +459,12 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
         var acquired = false;
         try
         {
+            // Nothing is written on a socket IBKR has not confirmed: the gateway drops such a frame
+            // without a reply, so the caller would be told it was sent and hear nothing back ever
+            // (#73). 'tic' is not exempt -- it is a frame like any other, and a keep-alive for a
+            // session that does not exist keeps nothing alive.
+            await connection.Confirmed.WaitAsync(linked.Token).ConfigureAwait(false);
+
             // A WebSocket permits one send at a time.
             await _sendGate.WaitAsync(linked.Token).ConfigureAwait(false);
             acquired = true;
@@ -465,7 +533,7 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
                 // Client Portal Gateway sends every frame as binary — session confirmations and
                 // heartbeats included. Close is the only other member of the enum and has already
                 // broken out above, so there is no third case to drop.
-                Dispatch(message.WrittenMemory);
+                Dispatch(connection, message.WrittenMemory);
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -645,7 +713,7 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
         }
     }
 
-    private void Dispatch(ReadOnlyMemory<byte> utf8)
+    private void Dispatch(Connection connection, ReadOnlyMemory<byte> utf8)
     {
         JsonDocument document;
         try
@@ -672,7 +740,7 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
             var topic = topicElement.GetString()!;
             var message = new StreamingMessage(topic, root.Clone(), _clock.GetCurrentInstant());
 
-            Observe(topic, message);
+            Observe(connection, topic, message);
 
             var delivered = 0;
             foreach (var subscription in _routes)
@@ -695,7 +763,7 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
     /// Keeps the transport's own view of the session from the unsolicited topics, whether or not
     /// anybody has subscribed to them.
     /// </summary>
-    private void Observe(string topic, StreamingMessage message)
+    private void Observe(Connection connection, string topic, StreamingMessage message)
     {
         switch (topic)
         {
@@ -707,8 +775,10 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
                         _lastHeartbeatAt = message.ReceivedAt;
                     }
                 }
-                else if (message.Body.TryGetProperty("success", out _))
+                else if (message.Body.TryGetProperty("success", out _) && connection.Confirm())
                 {
+                    // IBKR's own word that the session behind the socket exists. Until it arrives
+                    // the transport writes nothing, so this is what releases the first frame.
                     StreamingLog.SessionConfirmed(_logger);
                 }
 
@@ -848,6 +918,8 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
 
     private sealed class Connection(WebSocket socket) : IDisposable
     {
+        private readonly TaskCompletionSource _confirmed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
         public WebSocket Socket { get; } = socket;
 
         public CancellationTokenSource Cts { get; } = new();
@@ -855,6 +927,15 @@ public sealed class IbkrStreamingTransport : IIbkrStreamingTransport, IDisposabl
         public Task ReadLoop { get; set; } = Task.CompletedTask;
 
         public Task KeepAlive { get; set; } = Task.CompletedTask;
+
+        /// <summary>
+        /// Completes when IBKR has confirmed the session on this socket. Never completed otherwise:
+        /// a waiter ends on <see cref="Cts"/> instead, which is cancelled when the connection goes.
+        /// </summary>
+        public Task Confirmed => _confirmed.Task;
+
+        /// <summary>Opens the gate. False when it was already open.</summary>
+        public bool Confirm() => _confirmed.TrySetResult();
 
         public void Dispose()
         {

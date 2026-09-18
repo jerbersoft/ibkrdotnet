@@ -25,6 +25,9 @@ public class StreamingTransportTests
 
     private const string IbmFrame = """smd+8314+{"fields":["31","84"]}""";
 
+    /// <summary>What a gateway answers the upgrade with, before the transport may write anything.</summary>
+    private const string Confirmation = """{"topic":"system","success":"U1234567"}""";
+
     private sealed class Harness : IAsyncDisposable
     {
         public Harness(Action<IbkrTradingOptions>? configure = null, StreamingCredential? credential = null)
@@ -199,6 +202,117 @@ public class StreamingTransportTests
 
         Assert.Equal("smd+8314", message.Topic);
         Assert.Equal("189.60", message.Body.GetProperty("31").GetString());
+    }
+
+    /// <remarks>
+    /// A gateway completes the upgrade before its own upstream session exists and silently discards
+    /// anything written in that gap, so the first subscription on every connection delivered nothing
+    /// for the life of that connection, with nothing to say so (#73).
+    /// </remarks>
+    [Fact]
+    public async Task Holds_a_subscription_until_ibkr_confirms_the_session()
+    {
+        var ct = Within();
+        await using var harness = new Harness();
+        harness.Connector.Confirmation = null;
+
+        var subscribing = harness.Transport.SubscribeAsync(IbmTopOfBook, ct);
+        var socket = await harness.Connector.WaitForSocketAsync(0, ct);
+
+        // The socket is open, and the frame is not on it.
+        await Task.Delay(100, ct);
+        Assert.Empty(socket.Sent);
+        Assert.False(subscribing.IsCompleted);
+        Assert.Equal(StreamingConnectionState.Connecting, harness.Transport.State);
+
+        socket.PushBinary(Confirmation);
+
+        await using var subscription = await subscribing;
+        Assert.Equal(IbmFrame, await socket.NextSentAsync(ct));
+        Assert.Equal(StreamingConnectionState.Connected, harness.Transport.State);
+    }
+
+    [Fact]
+    public async Task Holds_the_subscriptions_a_reconnect_re_sends_the_same_way()
+    {
+        var ct = Within();
+        await using var harness = new Harness();
+        await using var subscription = await harness.Transport.SubscribeAsync(IbmTopOfBook, ct);
+        var first = harness.Socket;
+        Assert.Equal(IbmFrame, await first.NextSentAsync(ct));
+
+        // A reconnect walks into the same gap, and would lose every subscription it exists to keep.
+        harness.Connector.Confirmation = null;
+        first.Drop();
+
+        var second = await harness.Connector.WaitForSocketAsync(1, ct);
+        await Task.Delay(100, ct);
+        Assert.Empty(second.Sent);
+
+        second.PushBinary(Confirmation);
+
+        Assert.Equal(IbmFrame, await second.NextSentAsync(ct));
+    }
+
+    [Fact]
+    public async Task Holds_the_keep_alive_until_the_session_is_confirmed_too()
+    {
+        var ct = Within();
+        await using var harness = new Harness(o =>
+        {
+            o.Streaming.KeepAliveInterval = Duration.FromMilliseconds(20);
+            o.Streaming.SessionConfirmationTimeout = Duration.FromSeconds(30);
+        });
+        harness.Connector.Confirmation = null;
+
+        var connecting = harness.Transport.ConnectAsync(ct);
+        var socket = await harness.Connector.WaitForSocketAsync(0, ct);
+
+        // Several keep-alive intervals pass with nothing on the socket: 'tic' is not exempt, because
+        // a keep-alive for a session that does not exist keeps nothing alive.
+        await Task.Delay(100, ct);
+        Assert.Empty(socket.Sent);
+
+        socket.PushBinary(Confirmation);
+        await connecting;
+
+        Assert.Equal("tic", await socket.NextSentAsync(ct));
+    }
+
+    [Fact]
+    public async Task Fails_the_open_when_ibkr_never_confirms_the_session()
+    {
+        var ct = Within();
+        await using var harness = new Harness(
+            o => o.Streaming.SessionConfirmationTimeout = Duration.FromMilliseconds(50));
+        harness.Connector.Confirmation = null;
+
+        var ex = await Assert.ThrowsAsync<IbkrStreamingException>(() => harness.Transport.ConnectAsync(ct));
+
+        Assert.Contains("did not confirm the session", ex.Message, StringComparison.Ordinal);
+        Assert.Equal(StreamingConnectionState.Disconnected, harness.Transport.State);
+
+        // The socket it opened is not left behind, and nothing went out on it.
+        var socket = Assert.Single(harness.Connector.Sockets);
+        Assert.True(socket.Disposed);
+        Assert.Empty(socket.Sent);
+
+        // A failed open is not a lost connection, so nothing is reconnecting on it either.
+        await Task.Delay(100, ct);
+        Assert.Single(harness.Connector.Sockets);
+    }
+
+    [Fact]
+    public async Task Sends_as_soon_as_the_socket_opens_when_the_wait_is_turned_off()
+    {
+        var ct = Within();
+        await using var harness = new Harness(o => o.Streaming.SessionConfirmationTimeout = Duration.Zero);
+        harness.Connector.Confirmation = null;
+
+        // The escape hatch for a mechanism that confirms differently, or not at all.
+        await using var subscription = await harness.Transport.SubscribeAsync(IbmTopOfBook, ct);
+
+        Assert.Equal(IbmFrame, await harness.Socket.NextSentAsync(ct));
     }
 
     [Fact]

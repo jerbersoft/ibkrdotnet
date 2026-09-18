@@ -80,6 +80,27 @@ public sealed class IbkrStreamingOptions
     public StreamingOverflowMode Overflow { get; set; } = StreamingOverflowMode.DropOldest;
 
     /// <summary>
+    /// How long IBKR is given to confirm the session on a newly opened socket, before which nothing
+    /// is sent on it. Defaults to 10 seconds.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A Client Portal Gateway completes the WebSocket upgrade before its own upstream session
+    /// exists, and discards anything written in that gap without a reply. The transport therefore
+    /// waits for the <c>system</c> message carrying <c>success</c> before it writes a single frame,
+    /// and an open whose confirmation does not arrive in this long fails with an
+    /// <see cref="Streaming.IbkrStreamingException"/> rather than sending into the void.
+    /// </para>
+    /// <para>
+    /// <see cref="Duration.Zero"/> turns the wait off, and frames go out as soon as the socket
+    /// opens. That is what the transport did before, and it is the escape hatch for a mechanism that
+    /// confirms differently or not at all: the wait is proven against a Client Portal Gateway and
+    /// has not been observed against an OAuth socket.
+    /// </para>
+    /// </remarks>
+    public Duration SessionConfirmationTimeout { get; set; } = Duration.FromSeconds(10);
+
+    /// <summary>
     /// How long the close handshake is given before the socket is abandoned. Defaults to 5 seconds.
     /// </summary>
     public Duration CloseTimeout { get; set; } = Duration.FromSeconds(5);
@@ -133,6 +154,12 @@ public sealed class IbkrStreamingOptions
         {
             throw new InvalidOperationException(
                 $"{nameof(IbkrStreamingOptions)}.{nameof(BufferCapacity)} must be at least 1.");
+        }
+
+        if (SessionConfirmationTimeout < Duration.Zero)
+        {
+            throw new InvalidOperationException(
+                $"{nameof(IbkrStreamingOptions)}.{nameof(SessionConfirmationTimeout)} cannot be negative.");
         }
 
         if (CloseTimeout <= Duration.Zero)

@@ -40,12 +40,19 @@ public interface IIbkrStreamingTransport : IAsyncDisposable
 
     /// <summary>
     /// Opens the socket if it is not already open: confirms the brokerage session, sends the
-    /// upgrade request with the session cookie and the mechanism's credential, and re-sends every
-    /// subscription still registered from before.
+    /// upgrade request with the session cookie and the mechanism's credential, waits for IBKR to
+    /// confirm the session on it, and re-sends every subscription still registered from before.
     /// </summary>
+    /// <remarks>
+    /// Returns once IBKR has confirmed the session, not merely once the socket is open: a gateway
+    /// finishes the upgrade before it has connected upstream and discards anything written in that
+    /// gap. See <see cref="Configuration.IbkrStreamingOptions.SessionConfirmationTimeout"/>.
+    /// </remarks>
     /// <param name="cancellationToken">Cancels the attempt.</param>
     /// <exception cref="Http.IbkrAuthenticationException">The brokerage session is not established.</exception>
-    /// <exception cref="IbkrStreamingException">The socket could not be opened.</exception>
+    /// <exception cref="IbkrStreamingException">
+    /// The socket could not be opened, or IBKR did not confirm the session on it in time.
+    /// </exception>
     Task ConnectAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -61,6 +68,10 @@ public interface IIbkrStreamingTransport : IAsyncDisposable
     /// Opens a topic. A solicited request opens the socket first if it is not open and sends its
     /// subscribe frame; an unsolicited one only registers to be routed to.
     /// </summary>
+    /// <remarks>
+    /// A subscribe frame is held until IBKR has confirmed the session on the socket, so this returns
+    /// only once the frame has actually gone out. See <see cref="ConnectAsync"/>.
+    /// </remarks>
     /// <param name="request">The topic to open.</param>
     /// <param name="cancellationToken">Cancels the attempt.</param>
     /// <returns>The subscription. Dispose it to close the topic.</returns>
@@ -73,6 +84,10 @@ public interface IIbkrStreamingTransport : IAsyncDisposable
     /// <summary>
     /// Sends a frame as written, for topics this library has not modelled. The socket must be open.
     /// </summary>
+    /// <remarks>
+    /// The frame waits for IBKR's session confirmation if it has not arrived yet, so a send racing a
+    /// connect in progress goes out after it rather than into the gap before it.
+    /// </remarks>
     /// <param name="frame">The frame, for example <c>tic</c>. See <see cref="StreamingFrame"/>.</param>
     /// <param name="cancellationToken">Cancels the send.</param>
     /// <exception cref="IbkrStreamingException">The socket is not open or refused the frame.</exception>
