@@ -45,21 +45,32 @@ public sealed record StreamingAuthenticationStatus
 }
 
 /// <summary>A <c>blt</c> message: an urgent bulletin about an exchange or system issue.</summary>
+/// <remarks>
+/// <c>args</c> carries a list, for the same reason <c>ntf</c> does: IBKR's published example shows one
+/// bare object and every bulletin a live gateway has sent arrived in an array, so both are read and a
+/// single object is read as a one-element list.
+/// </remarks>
 public sealed record StreamingBulletin
 {
     /// <summary>The topic, <c>blt</c>.</summary>
     [JsonPropertyName("topic")]
     public string? Topic { get; init; }
 
-    /// <summary>The bulletin.</summary>
+    /// <summary>The bulletins, usually one.</summary>
     [JsonPropertyName("args")]
-    public StreamingBulletinArgs? Args { get; init; }
+    [JsonConverter(typeof(SingleOrArrayConverter<StreamingBulletinArgs>))]
+    public IReadOnlyList<StreamingBulletinArgs> Args { get; init; } = [];
 }
 
 /// <summary>The body of a <see cref="StreamingBulletin"/>.</summary>
+/// <remarks>
+/// A live gateway also sends <c>exchanges</c>, which IBKR does not document. It has been null on every
+/// bulletin captured, so there is nothing to say what it holds, and a property whose type was guessed
+/// is worse than none: it is read and ignored until a bulletin arrives with a value in it.
+/// </remarks>
 public sealed record StreamingBulletinArgs
 {
-    /// <summary>The bulletin's identifier.</summary>
+    /// <summary>The bulletin's identifier. Documented as a string and sent as a number.</summary>
     [JsonPropertyName("id")]
     public string? Id { get; init; }
 

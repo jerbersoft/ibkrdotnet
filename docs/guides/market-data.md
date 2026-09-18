@@ -198,3 +198,15 @@ foreach (var arg in message.Deserialize<StreamingNotification>().Args)
 
 Answering is a trading decision, so nothing answers one for you. Left alone, the order stands as IBKR already has
 it; `SuppressMessagesAsync` takes the prompt's `MessageId` when the answer is always going to be the same one.
+
+`blt` carries a list for the same reason, and the same accommodation reads both shapes:
+
+```csharp
+foreach (var args in message.Deserialize<StreamingBulletin>().Args)
+{
+    logger.LogWarning("IBKR bulletin {Id}: {Message}", args.Id, args.Message);
+}
+```
+
+A live bulletin also carries an `exchanges` field IBKR documents nowhere. It has been null on every one
+captured, so it is read and ignored rather than modelled from a guess.
