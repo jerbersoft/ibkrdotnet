@@ -117,4 +117,17 @@ public class StreamingSubscriptionRequestTests
         Assert.False(request.Matches("smd+q2"));
         Assert.False(request.Matches("smhq2"));
     }
+
+    [Fact]
+    public void Matches_every_target_of_a_topic_when_the_target_is_what_is_being_learned()
+    {
+        // What the live sweep listens with to find out which target IBKR restates for an
+        // exchange-qualified stream (#60). Both candidate answers have to reach it, or a gateway
+        // that answers on the bare contract identifier would look like one that answered nothing.
+        var request = StreamingSubscriptionRequest.Unsolicited("smd") with { MatchResponseTopicPrefix = true };
+
+        Assert.True(request.Matches("smd+8314"));
+        Assert.True(request.Matches("smd+8314@ARCA"));
+        Assert.False(request.Matches("smh+8314"));
+    }
 }
