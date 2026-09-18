@@ -65,13 +65,39 @@ public class StreamingMessageTests
         var bulletin = Load("bulletins.json").Deserialize<StreamingBulletin>();
         var notification = Load("notifications.json").Deserialize<StreamingNotification>();
 
-        Assert.Equal("id", bulletin.Args?.Id);
-        Assert.Equal("message", bulletin.Args?.Message);
+        // IBKR documents 'args' as a bare object and a gateway sends an array; the examples still read.
+        var args = Assert.Single(bulletin.Args);
+        Assert.Equal("id", args.Id);
+        Assert.Equal("message", args.Message);
 
-        // IBKR documents 'args' as a bare object and a gateway sends an array; the example still reads.
         var notice = Assert.IsType<StreamingNotificationArgs.Notice>(Assert.Single(notification.Args));
         Assert.Equal("title", notice.Title);
         Assert.Equal("url", notice.Url);
+    }
+
+    [Fact]
+    public void Reads_a_recorded_bulletin_whose_args_is_an_array()
+    {
+        var bulletin = Load("bulletins.live.json").Deserialize<StreamingBulletin>();
+
+        // The identifier is documented as a string and sent as a number, and 'exchanges' is sent and
+        // documented nowhere; neither stops the bulletin being read.
+        var args = Assert.Single(bulletin.Args);
+        Assert.Equal("1789618148", args.Id);
+        Assert.StartsWith("[BBSMSG Bulletin]", args.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Reads_more_than_one_bulletin_from_one_message()
+    {
+        // Nothing says a gateway sends bulletins one to a frame, and the array is what would carry
+        // two.
+        var body = JsonDocument.Parse(
+            """{"topic":"blt","args":[{"id":1,"message":"first"},{"id":2,"message":"second"}]}""")
+            .RootElement.Clone();
+        var bulletin = new StreamingMessage("blt", body, ReceivedAt).Deserialize<StreamingBulletin>();
+
+        Assert.Equal(["first", "second"], bulletin.Args.Select(args => args.Message));
     }
 
     [Fact]

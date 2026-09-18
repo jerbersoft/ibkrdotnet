@@ -3243,8 +3243,9 @@ namespace IbkrDotNet.Trading.Models.Streaming
     public sealed class StreamingBulletin : System.IEquatable<IbkrDotNet.Trading.Models.Streaming.StreamingBulletin>
     {
         public StreamingBulletin() { }
+        [System.Text.Json.Serialization.JsonConverter(typeof(IbkrDotNet.Trading.Serialization.Converters.SingleOrArrayConverter<IbkrDotNet.Trading.Models.Streaming.StreamingBulletinArgs>))]
         [System.Text.Json.Serialization.JsonPropertyName("args")]
-        public IbkrDotNet.Trading.Models.Streaming.StreamingBulletinArgs? Args { get; init; }
+        public System.Collections.Generic.IReadOnlyList<IbkrDotNet.Trading.Models.Streaming.StreamingBulletinArgs> Args { get; init; }
         [System.Text.Json.Serialization.JsonPropertyName("topic")]
         public string? Topic { get; init; }
     }
