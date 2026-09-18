@@ -39,6 +39,16 @@ public sealed class FakeWebSocketConnector : IIbkrWebSocketConnector
 
     public FakeWebSocket Socket => Sockets[^1];
 
+    /// <summary>
+    /// The confirmation each new socket answers the upgrade with, as a gateway sends it: binary, and
+    /// before the transport has written anything. Set to null for a gateway that never confirms.
+    /// </summary>
+    /// <remarks>
+    /// Every socket gets one by default because every real one does, and the transport writes
+    /// nothing until it arrives (#73). A test about the wait itself is the test that clears this.
+    /// </remarks>
+    public string? Confirmation { get; set; } = """{"topic":"system","success":"U1234567"}""";
+
     /// <summary>Makes the next connect attempt fail, the way an unreachable gateway would.</summary>
     public void FailNextConnect(Exception failure)
     {
@@ -76,6 +86,11 @@ public sealed class FakeWebSocketConnector : IIbkrWebSocketConnector
             }
 
             var socket = new FakeWebSocket();
+            if (Confirmation is { } confirmation)
+            {
+                socket.PushBinary(confirmation);
+            }
+
             _sockets.Add(socket);
             return Task.FromResult<WebSocket>(socket);
         }

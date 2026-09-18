@@ -171,6 +171,16 @@ unsolicited topics — `system`, `sts`, `act`, `blt` and `ntf` — are read with
 for those *before* the socket opens or you will race them. `ibkr.Streaming.IsBrokerageSessionAuthenticated` and
 `LastHeartbeatAt` are the transport's own reading of those two topics, kept whether or not anybody subscribes.
 
+**Nothing is sent until IBKR confirms the session.** A gateway finishes the WebSocket upgrade before it has
+connected upstream, and discards anything written in that gap without a reply — so a subscription sent too early
+delivers nothing at all, for the life of that connection, while everything about the transport says it is
+connected. `SubscribeAsync` and `ConnectAsync` therefore return only once the `system` message carrying `success`
+has arrived, on the first connection and on every reconnect, and `tic` waits for it too. A confirmation that does
+not arrive within `Streaming.SessionConfirmationTimeout` (10 seconds) fails the open with an
+`IbkrStreamingException`. Setting that to `Duration.Zero` turns the wait off, which is the escape hatch if you
+reach a socket that confirms differently: the behaviour is proven against a Client Portal Gateway and has not
+been observed against an OAuth socket.
+
 **`ntf` carries two different things.** A notice reports something that happened and asks nothing — warning 118
 dating a resting order's automatic cancellation, say. A prompt is a question about an order, one of the same
 questions an order submission answers over REST, arriving unsolicited because something other than this client
