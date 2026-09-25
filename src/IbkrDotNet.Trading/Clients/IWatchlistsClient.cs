@@ -39,17 +39,18 @@ public interface IWatchlistsClient
     /// Creates a watchlist from a set of instruments.
     /// </summary>
     /// <param name="watchlistId">
-    /// The identifier to create the watchlist under. IBKR requires digits only, and requires it to
-    /// be unique among the username's watchlists; it does not document what happens when it is not,
-    /// so check <see cref="GetAllAsync(bool, CancellationToken)"/> first rather than risk displacing
-    /// a list the user created elsewhere.
+    /// The identifier to create the watchlist under: a whole number, digits with an optional leading
+    /// minus. IBKR documents digits only, but gave some older lists negative identifiers and takes
+    /// writes under them. IBKR also documents the identifier as unique, yet an identifier already in
+    /// use replaces that watchlist in place rather than being refused, so check
+    /// <see cref="GetAllAsync(bool, CancellationToken)"/> first unless replacing it is the intent.
     /// </param>
     /// <param name="name">The display name, shown in Trader Workstation and Client Portal.</param>
     /// <param name="conIds">The instruments to put in the watchlist.</param>
     /// <param name="cancellationToken">Cancels the request.</param>
     /// <exception cref="ArgumentException">
-    /// <paramref name="watchlistId"/> is empty or contains anything but digits, or
-    /// <paramref name="name"/> is empty.
+    /// <paramref name="watchlistId"/> is empty or not a whole number, or <paramref name="name"/> is
+    /// empty.
     /// </exception>
     /// <remarks>
     /// The returned watchlist holds no instruments whatever was submitted: IBKR documents the

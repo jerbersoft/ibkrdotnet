@@ -79,19 +79,19 @@ public sealed class WatchlistsClient(IIbkrApiClient apiClient) : IWatchlistsClie
         return new WatchlistDeletion { DeletedId = response.Data?.Deleted };
     }
 
-    // Checked here rather than left to IBKR, which documents the constraint but not what it does
-    // when the constraint is broken. Failing on the call is clearer than either outcome.
+    // IBKR documents the identifier as digits only, yet gave some older lists negative identifiers
+    // and takes writes under them, so a leading minus is allowed. Anything else is still refused
+    // here rather than sent: IBKR does not document what it does with it, and failing on the call
+    // is clearer than finding out.
     private static void ValidateId(string watchlistId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(watchlistId);
-        foreach (var character in watchlistId)
+        var digits = watchlistId.AsSpan(watchlistId.StartsWith('-') ? 1 : 0);
+        if (digits.IsEmpty || digits.ContainsAnyExceptInRange('0', '9'))
         {
-            if (!char.IsAsciiDigit(character))
-            {
-                throw new ArgumentException(
-                    $"IBKR requires a watchlist identifier of digits only; '{watchlistId}' is not.",
-                    nameof(watchlistId));
-            }
+            throw new ArgumentException(
+                $"A watchlist identifier is a whole number, digits with an optional leading minus; '{watchlistId}' is not.",
+                nameof(watchlistId));
         }
     }
 }

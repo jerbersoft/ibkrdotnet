@@ -120,7 +120,10 @@ public sealed record WatchlistDeletion
 }
 
 /// <summary>The body of <c>POST /iserver/watchlist</c>.</summary>
-/// <param name="Id">The identifier to create the watchlist under. Digits only, and unique.</param>
+/// <param name="Id">
+/// The identifier to create the watchlist under. Digits with an optional leading minus; one already in
+/// use replaces that watchlist.
+/// </param>
 /// <param name="Name">The display name.</param>
 /// <param name="Rows">One row per instrument.</param>
 internal sealed record CreateWatchlistRequest(

@@ -105,12 +105,35 @@ public class WatchlistsClientTests
         Assert.Empty(created.Instruments);
     }
 
+    [Fact]
+    public async Task Sends_a_negative_watchlist_id_as_given()
+    {
+        // IBKR documents the identifier as digits only, but gave some older lists negative ones and,
+        // measured against a live gateway, takes a write under them (#80).
+        using var harness = new ClientHarness();
+        harness.RespondWithJson(
+            """{"id":"-6062842538047152184","hash":"1790319863615","name":"Watchlist","readOnly":false,"instruments":[]}""");
+        var client = new WatchlistsClient(harness.ApiClient);
+
+        var created = await client.CreateAsync(
+            "-6062842538047152184", "Watchlist", [new ConId(270639)], TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            """{"id":"-6062842538047152184","name":"Watchlist","rows":[{"C":"270639"}]}""",
+            harness.LastRequest.Body);
+        Assert.Equal("-6062842538047152184", created.Id);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
     [InlineData("my-list")]
     [InlineData("1234a")]
-    public async Task Refuses_a_watchlist_id_ibkr_will_not_accept(string watchlistId)
+    [InlineData("-")]
+    [InlineData("--1234")]
+    [InlineData("12-34")]
+    [InlineData("+1234")]
+    public async Task Refuses_a_watchlist_id_that_is_not_a_whole_number(string watchlistId)
     {
         using var harness = new ClientHarness();
         var client = new WatchlistsClient(harness.ApiClient);
